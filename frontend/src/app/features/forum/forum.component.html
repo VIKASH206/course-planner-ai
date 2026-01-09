@@ -233,15 +233,15 @@
                               <!-- Author -->
                               <div class="flex items-center gap-1">
                                 <div class="w-6 h-6 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 flex items-center justify-center">
-                                  @if (thread.author?.avatar) {
-                                    <img [src]="thread.author.avatar" [alt]="thread.author?.name || 'User'" class="w-full h-full rounded-full object-cover">
+                                  @if (thread.author && thread.author.avatar) {
+                                    <img [src]="thread.author.avatar" [alt]="thread.author.name || 'User'" class="w-full h-full rounded-full object-cover">
                                   } @else {
-                                    <span class="text-white text-xs font-bold">{{ getInitials(thread.author?.name || 'U') }}</span>
+                                    <span class="text-white text-xs font-bold">{{ getInitials((thread.author && thread.author.name) || 'U') }}</span>
                                   }
                                 </div>
-                                <span class="text-gray-700 font-medium">{{ thread.author?.name || 'Anonymous' }}</span>
-                                <span [class]="getRoleClass(thread.author?.role || 'student')" class="px-2 py-1 text-xs font-medium rounded">
-                                  {{ thread.author?.role || 'student' }}
+                                <span class="text-gray-700 font-medium">{{ (thread.author && thread.author.name) || 'Anonymous' }}</span>
+                                <span [class]="getRoleClass((thread.author && thread.author.role) || 'student')" class="px-2 py-1 text-xs font-medium rounded">
+                                  {{ (thread.author && thread.author.role) || 'student' }}
                                 </span>
                               </div>
                               
