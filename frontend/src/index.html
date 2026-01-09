@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Course Planner AI</title>
+  <base href="/">
+  
+  <!-- Enhanced Viewport for All Devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
+  
+  <!-- Mobile Web App Capable -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Course Planner">
+  
+  <!-- Theme Color for Mobile Browsers -->
+  <meta name="theme-color" content="#667eea">
+  <meta name="msapplication-TileColor" content="#667eea">
+  
+  <!-- Touch Icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon.ico">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+  <!-- Emergency Logout Script -->
+  <script>
+    window.emergencyLogout = function() {
+      console.log('🚨 EMERGENCY LOGOUT ACTIVATED');
+      
+      // Clear all storage aggressively
+      try {
+        localStorage.clear();
+        console.log('✅ localStorage cleared');
+      } catch(e) { console.log('❌ localStorage error:', e); }
+      
+      try {
+        sessionStorage.clear();
+        console.log('✅ sessionStorage cleared');
+      } catch(e) { console.log('❌ sessionStorage error:', e); }
+      
+      // Clear cookies
+      try {
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        console.log('✅ Cookies cleared');
+      } catch(e) { console.log('❌ Cookie error:', e); }
+      
+      console.log('🗑️ All data cleared by emergency logout');
+      console.log('🔄 Force reloading page...');
+      
+      // Force complete page reload to clear Angular state
+      window.location.href = 'http://localhost:4200/auth/login';
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 100);
+    };
+    
+    window.forceReload = function() {
+      console.log('🔄 FORCE RELOAD TO LOGIN');
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = 'http://localhost:4200/auth/login';
+      window.location.reload(true);
+    };
+    
+    // Nuclear option - complete browser cache clear
+    window.nuclearLogout = function() {
+      console.log('☢️ NUCLEAR LOGOUT - CLEARING EVERYTHING');
+      
+      // Clear all possible storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear all cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      // Clear cache (if supported)
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) {
+            caches.delete(name);
+          });
+        });
+      }
+      
+      console.log('☢️ Everything cleared, reloading...');
+      window.location.replace('http://localhost:4200/auth/login');
+    };
+    
+    // Global logout interceptor - catch any logout clicks
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🔗 Setting up global logout interceptor...');
+      
+      // Intercept any clicks on elements containing "logout" text
+      document.addEventListener('click', function(event) {
+        var target = event.target;
+        var text = target ? target.textContent : '';
+        
+        if (text && text.toLowerCase().includes('logout')) {
+          console.log('🎯 Logout click intercepted!', text);
+          event.preventDefault();
+          event.stopPropagation();
+          
+          // Trigger nuclear logout
+          setTimeout(function() {
+            window.nuclearLogout();
+          }, 100);
+          
+          return false;
+        }
+      }, true); // Use capture phase
+    });
+    
+    console.log('🆘 Emergency logout available! Type: emergencyLogout()');
+    console.log('🔄 Force reload available! Type: forceReload()');
+    console.log('☢️ Nuclear option available! Type: nuclearLogout()');
+    console.log('🎯 Global logout interceptor active!');
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

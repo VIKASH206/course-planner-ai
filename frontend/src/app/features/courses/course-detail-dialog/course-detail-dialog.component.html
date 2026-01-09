@@ -1,0 +1,242 @@
+<div class="course-detail-dialog">
+  <!-- Header -->
+  <div class="dialog-header">
+    <div class="header-content">
+      <div class="course-info">
+        <h1 class="course-title">{{ course.title }}</h1>
+        <p class="course-instructor" *ngIf="course.instructor">
+          <mat-icon class="inline-icon">person</mat-icon>
+          {{ course.instructor }}
+        </p>
+      </div>
+      <button mat-icon-button class="close-button" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    
+    <!-- Course Badges -->
+    <div class="badges">
+      <mat-chip-set>
+        <mat-chip class="badge badge-category">{{ course.category }}</mat-chip>
+        <mat-chip [class]="'badge badge-' + (course.difficulty ? course.difficulty.toLowerCase() : 'beginner')">
+          {{ course.difficulty || 'Beginner' }}
+        </mat-chip>
+        <mat-chip class="badge badge-duration">
+          <mat-icon class="chip-icon">schedule</mat-icon>
+          {{ course.estimatedTime || '20 hours' }}
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+  </div>
+
+  <!-- Content Tabs -->
+  <mat-tab-group class="content-tabs" animationDuration="300ms">
+    <!-- Overview Tab -->
+    <mat-tab label="Overview">
+      <div class="tab-content">
+        <div class="overview-section">
+          <h2 class="section-title">About This Course</h2>
+          <p class="course-description">{{ course.description }}</p>
+          
+          <mat-divider class="section-divider"></mat-divider>
+          
+          <!-- AI Summary Section -->
+          <div class="ai-summary-section" *ngIf="!loadingSummary() && aiSummary()">
+            <div class="ai-badge">
+              <mat-icon class="ai-icon">psychology</mat-icon>
+              <span>AI Analysis</span>
+            </div>
+            
+            <div class="summary-content">
+              <p class="ai-summary-text">{{ aiSummary()?.summary }}</p>
+              
+              <div class="key-points" *ngIf="aiSummary()?.keyPoints?.length">
+                <h3 class="subsection-title">Key Learning Points</h3>
+                <ul class="points-list">
+                  <li *ngFor="let point of aiSummary()?.keyPoints">
+                    <mat-icon class="point-icon">check_circle</mat-icon>
+                    <span>{{ point }}</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div class="learning-outcomes" *ngIf="aiSummary()?.learningOutcomes?.length">
+                <h3 class="subsection-title">What You'll Learn</h3>
+                <div class="outcomes-grid">
+                  <div class="outcome-card" *ngFor="let outcome of aiSummary()?.learningOutcomes">
+                    <mat-icon class="outcome-icon">lightbulb</mat-icon>
+                    <span>{{ outcome }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="recommendation-info">
+                <div class="info-item">
+                  <mat-icon class="info-icon">access_time</mat-icon>
+                  <span>Complete in {{ aiSummary()?.estimatedCompletionDays }} days</span>
+                </div>
+                <div class="info-item" *ngIf="aiSummary()?.recommendedFor?.length">
+                  <mat-icon class="info-icon">group</mat-icon>
+                  <span>Recommended for: {{ aiSummary()?.recommendedFor[0] }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="loading-summary" *ngIf="loadingSummary()">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Generating AI insights...</p>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Syllabus Tab -->
+    <mat-tab label="Syllabus">
+      <div class="tab-content">
+        <div class="syllabus-section">
+          <h2 class="section-title">Course Curriculum</h2>
+          
+          <div class="syllabus-modules">
+            <div class="module-card" *ngFor="let module of syllabus; let i = index">
+              <div class="module-header">
+                <div class="module-number">{{ i + 1 }}</div>
+                <div class="module-info">
+                  <h3 class="module-title">{{ module.module }}</h3>
+                  <p class="module-duration">
+                    <mat-icon class="duration-icon">schedule</mat-icon>
+                    {{ module.duration }}
+                  </p>
+                </div>
+              </div>
+              
+              <div class="module-topics">
+                <ul class="topics-list">
+                  <li *ngFor="let topic of module.topics">
+                    <mat-icon class="topic-icon">play_circle_outline</mat-icon>
+                    <span>{{ topic }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div class="total-duration">
+            <mat-icon>timer</mat-icon>
+            <span>Total Course Duration: {{ course.estimatedTime || '20 hours' }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Instructor Tab -->
+    <mat-tab label="Instructor">
+      <div class="tab-content">
+        <div class="instructor-section">
+          <div class="instructor-profile">
+            <div class="instructor-avatar">
+              <mat-icon class="avatar-icon">person</mat-icon>
+            </div>
+            <div class="instructor-details">
+              <h2 class="instructor-name">{{ course.instructor || 'Expert Instructor' }}</h2>
+              <p class="instructor-title">{{ course.category }} Specialist</p>
+            </div>
+          </div>
+          
+          <mat-divider class="section-divider"></mat-divider>
+          
+          <div class="instructor-bio">
+            <h3 class="subsection-title">About the Instructor</h3>
+            <p class="bio-text">
+              An experienced professional with years of expertise in {{ course.category }}.
+              Passionate about teaching and helping students achieve their learning goals.
+              Has successfully trained thousands of students worldwide.
+            </p>
+          </div>
+          
+          <div class="instructor-stats">
+            <div class="stat-card">
+              <mat-icon class="stat-icon">school</mat-icon>
+              <div class="stat-info">
+                <span class="stat-value">10+</span>
+                <span class="stat-label">Courses</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <mat-icon class="stat-icon">group</mat-icon>
+              <div class="stat-info">
+                <span class="stat-value">50k+</span>
+                <span class="stat-label">Students</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <mat-icon class="stat-icon">star</mat-icon>
+              <div class="stat-info">
+                <span class="stat-value">4.8</span>
+                <span class="stat-label">Rating</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Related Courses Tab -->
+    <mat-tab label="Related Courses">
+      <div class="tab-content">
+        <div class="related-section">
+          <h2 class="section-title">More Courses You Might Like</h2>
+          
+          <div class="related-courses-grid" *ngIf="!loadingRelated() && relatedCourses().length">
+            <div class="related-course-card" *ngFor="let relatedCourse of relatedCourses()">
+              <div class="related-course-header">
+                <h3 class="related-course-title">{{ relatedCourse.title }}</h3>
+                <mat-chip class="difficulty-chip">{{ relatedCourse.difficulty }}</mat-chip>
+              </div>
+              <p class="related-course-description">{{ relatedCourse.description }}</p>
+              <div class="related-course-footer">
+                <span class="course-time">
+                  <mat-icon class="time-icon">schedule</mat-icon>
+                  {{ relatedCourse.estimatedTime }}
+                </span>
+                <button mat-button color="primary" class="view-course-btn">
+                  View Course
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="loading-related" *ngIf="loadingRelated()">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Loading related courses...</p>
+          </div>
+          
+          <div class="no-related" *ngIf="!loadingRelated() && !relatedCourses().length">
+            <mat-icon class="no-courses-icon">info</mat-icon>
+            <p>No related courses found at the moment.</p>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <!-- Footer Actions -->
+  <div class="dialog-footer">
+    <div class="footer-content">
+      <button mat-button class="cancel-btn" (click)="close()">
+        Close
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        class="enroll-btn"
+        [disabled]="enrolling()"
+        (click)="enrollInCourse()">
+        <mat-spinner diameter="20" *ngIf="enrolling()" class="btn-spinner"></mat-spinner>
+        <mat-icon *ngIf="!enrolling()">add_circle</mat-icon>
+        <span>{{ enrolling() ? 'Enrolling...' : 'Enroll in Course' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

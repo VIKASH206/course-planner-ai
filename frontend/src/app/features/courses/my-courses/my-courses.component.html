@@ -1,0 +1,224 @@
+<div class="my-courses-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1 class="page-title">My Learning Journey</h1>
+      <p class="page-subtitle">Track your progress and continue learning</p>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid" *ngIf="!loading()">
+    <div class="stat-card">
+      <div class="stat-icon-wrapper primary">
+        <mat-icon class="stat-icon">school</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats().totalCourses }}</h3>
+        <p class="stat-label">Total Courses</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon-wrapper success">
+        <mat-icon class="stat-icon">check_circle</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats().completedCourses }}</h3>
+        <p class="stat-label">Completed</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon-wrapper warning">
+        <mat-icon class="stat-icon">pending</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats().inProgressCourses }}</h3>
+        <p class="stat-label">In Progress</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon-wrapper info">
+        <mat-icon class="stat-icon">schedule</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats().totalStudyTime }}h</h3>
+        <p class="stat-label">Total Study Time</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overall Progress -->
+  <div class="overall-progress-card" *ngIf="!loading() && enrolledCourses().length > 0">
+    <div class="progress-header">
+      <div class="progress-info">
+        <h2 class="progress-title">Overall Progress</h2>
+        <p class="progress-subtitle">You're doing great! Keep it up!</p>
+      </div>
+      <div class="progress-percentage">
+        <span class="percentage-value">{{ stats().totalProgress }}%</span>
+        <span class="percentage-label">Complete</span>
+      </div>
+    </div>
+    <mat-progress-bar 
+      mode="determinate" 
+      [value]="stats().totalProgress"
+      class="overall-progress-bar">
+    </mat-progress-bar>
+  </div>
+
+  <!-- Course Tabs -->
+  <mat-tab-group 
+    class="courses-tabs" 
+    animationDuration="300ms"
+    (selectedIndexChange)="onTabChange($event)">
+    <mat-tab label="All Courses">
+      <ng-container *ngTemplateOutlet="coursesList"></ng-container>
+    </mat-tab>
+    <mat-tab label="In Progress">
+      <ng-container *ngTemplateOutlet="coursesList"></ng-container>
+    </mat-tab>
+    <mat-tab label="Completed">
+      <ng-container *ngTemplateOutlet="coursesList"></ng-container>
+    </mat-tab>
+  </mat-tab-group>
+
+  <!-- Courses List Template -->
+  <ng-template #coursesList>
+    <div class="courses-content">
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="loading()">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Loading your courses...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!loading() && filteredCourses().length === 0">
+        <mat-icon class="empty-icon">sentiment_dissatisfied</mat-icon>
+        <h3 class="empty-title">No courses found</h3>
+        <p class="empty-text">
+          {{ selectedTab() === 'all' 
+            ? 'Start your learning journey by enrolling in courses!' 
+            : selectedTab() === 'in-progress'
+            ? 'No courses in progress. Continue learning!'
+            : 'No completed courses yet. Keep learning!' 
+          }}
+        </p>
+        <button mat-raised-button color="primary" class="browse-btn">
+          <mat-icon>search</mat-icon>
+          Browse Courses
+        </button>
+      </div>
+
+      <!-- Courses Grid -->
+      <div class="courses-grid" *ngIf="!loading() && filteredCourses().length > 0">
+        <div class="course-card" *ngFor="let course of filteredCourses()">
+          <!-- Course Image -->
+          <div class="course-image-container" (click)="openCourseDetails(course)">
+            <img 
+              [src]="course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80'" 
+              [alt]="course.title"
+              class="course-image"
+              (error)="$any($event.target).src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80'"
+            />
+            <div class="course-image-overlay">
+              <div class="course-category-badge">
+                <mat-icon class="category-icon">bookmark</mat-icon>
+                <span>{{ course.category }}</span>
+              </div>
+              <div class="course-progress-overlay">
+                <div class="progress-circle" [style.background]="'conic-gradient(#4caf50 ' + (course.progress * 3.6) + 'deg, rgba(255,255,255,0.3) 0deg)'">
+                  <div class="progress-circle-inner">{{ course.progress }}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Course Content -->
+          <div class="course-body">            <!-- Course Header -->
+            <div class="course-header-inline">
+              <h3 class="course-title" (click)="openCourseDetails(course)">{{ course.title }}</h3>
+              <button mat-icon-button [matMenuTriggerFor]="courseMenu" class="course-menu-btn">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #courseMenu="matMenu">
+                <button mat-menu-item (click)="openCourseDetails(course)">
+                  <mat-icon>info</mat-icon>
+                  <span>Course Details</span>
+                </button>
+                <button mat-menu-item (click)="continueCourse(course)">
+                  <mat-icon>play_circle</mat-icon>
+                  <span>Continue Learning</span>
+                </button>
+              </mat-menu>
+            </div>
+            <h3 class="course-title">{{ course.title }}</h3>
+            <p class="course-instructor">
+              <mat-icon class="instructor-icon">person</mat-icon>
+              {{ course.instructor }}
+            </p>
+            <p class="course-description">{{ course.description }}</p>
+
+            <!-- Course Info -->
+            <div class="course-info-row">
+              <div class="info-item">
+                <mat-icon class="info-icon">schedule</mat-icon>
+                <span>{{ course.estimatedTime }}</span>
+              </div>
+              <div class="info-item">
+                <mat-icon class="info-icon">star</mat-icon>
+                <span>{{ course.rating || 'N/A' }}</span>
+              </div>
+              <mat-chip [class]="'difficulty-chip ' + (course.difficulty.toLowerCase() || 'beginner')">
+                {{ course.difficulty }}
+              </mat-chip>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-section">
+              <div class="progress-header-row">
+                <span class="progress-text">
+                  {{ course.completedLessons }} / {{ course.totalLessons }} lessons
+                </span>
+                <span class="progress-percentage-text">{{ course.progress }}%</span>
+              </div>
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="course.progress"
+                [color]="getProgressColor(course.progress)"
+                class="course-progress-bar">
+              </mat-progress-bar>
+              <div class="progress-status-row">
+                <span class="status-badge" [class.completed]="course.progress === 100">
+                  {{ getProgressStatus(course.progress) }}
+                </span>
+                <span class="last-accessed" *ngIf="course.lastAccessedDate">
+                  Last accessed {{ formatDate(course.lastAccessedDate) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Course Footer -->
+          <div class="course-footer">
+            <span class="enrolled-date">
+              <mat-icon class="date-icon">event</mat-icon>
+              Enrolled {{ formatDate(course.enrolledDate) }}
+            </span>
+            <button 
+              mat-raised-button 
+              color="primary" 
+              class="continue-btn"
+              [disabled]="course.progress === 100"
+              (click)="continueCourse(course); $event.stopPropagation()">
+              <mat-icon>{{ course.progress === 100 ? 'check' : 'play_arrow' }}</mat-icon>
+              <span>{{ course.progress === 100 ? 'Completed' : course.progress === 0 ? 'Start Course' : 'Continue' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</div>

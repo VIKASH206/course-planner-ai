@@ -1,0 +1,502 @@
+/* ========================================
+   RESPONSIVE DESIGN FOR ALL DEVICES
+   ======================================== */
+
+/* Base - Mobile First Approach */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Touch-friendly tap targets (min 44x44px for iOS) */
+button, a, input, select, textarea {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+}
+
+/* Smooth scrolling on all devices */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ========================================
+   MOBILE DEVICES (< 576px)
+   Small Phones: iPhone SE, Android small
+   ======================================== */
+@media screen and (max-width: 575px) {
+  html {
+    font-size: 14px;
+  }
+  
+  body {
+    padding: 0;
+    margin: 0;
+  }
+  
+  /* Container adjustments */
+  .container, .max-w-7xl {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  
+  /* Card spacing */
+  .mat-card, mat-card {
+    margin: 8px 0;
+    padding: 12px !important;
+  }
+  
+  /* Button sizing */
+  .mat-button, .mat-raised-button, .mat-flat-button {
+    min-height: 48px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+  
+  /* Grid adjustments */
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
+  /* Typography */
+  h1 { font-size: 1.75rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  h3 { font-size: 1.25rem !important; }
+  h4 { font-size: 1.125rem !important; }
+  
+  /* Toolbar */
+  .toolbar, mat-toolbar {
+    min-height: 56px !important;
+    padding: 0 12px !important;
+  }
+  
+  /* Forms */
+  .mat-form-field {
+    width: 100%;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  input, textarea, select {
+    font-size: 16px !important; /* Prevent iOS zoom */
+  }
+}
+
+/* ========================================
+   MOBILE LANDSCAPE (576px - 767px)
+   Phones in landscape, Small tablets
+   ======================================== */
+@media screen and (min-width: 576px) and (max-width: 767px) {
+  html {
+    font-size: 15px;
+  }
+  
+  .container, .max-w-7xl {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+  
+  .mat-card, mat-card {
+    padding: 16px !important;
+  }
+}
+
+/* ========================================
+   TABLETS (768px - 1023px)
+   iPad, Android tablets
+   ======================================== */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  html {
+    font-size: 15px;
+  }
+  
+  .container, .max-w-7xl {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
+  }
+  
+  /* Sidebar */
+  .sidenav {
+    width: 240px !important;
+  }
+  
+  .mat-card, mat-card {
+    padding: 20px !important;
+  }
+}
+
+/* ========================================
+   DESKTOP SMALL (1024px - 1199px)
+   Small laptops
+   ======================================== */
+@media screen and (min-width: 1024px) and (max-width: 1199px) {
+  html {
+    font-size: 16px;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  
+  .sidenav {
+    width: 260px !important;
+  }
+}
+
+/* ========================================
+   DESKTOP MEDIUM (1200px - 1439px)
+   Standard desktops
+   ======================================== */
+@media screen and (min-width: 1200px) and (max-width: 1439px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  
+  .sidenav {
+    width: 280px !important;
+  }
+}
+
+/* ========================================
+   DESKTOP LARGE (1440px+)
+   Large desktops, 4K
+   ======================================== */
+@media screen and (min-width: 1440px) {
+  .container, .max-w-7xl {
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 24px !important;
+  }
+}
+
+/* ========================================
+   PROFILE PAGE SPECIFIC FIXES
+   ======================================== */
+
+/* Desktop/Laptop: Optimize profile page layout */
+@media screen and (min-width: 1024px) {
+  /* Profile page container */
+  .max-w-7xl {
+    max-width: 1400px !important;
+    margin: 0 auto;
+    padding: 0 32px !important;
+  }
+  
+  /* Profile header adjustments */
+  .bg-white.dark\:bg-gray-800 {
+    padding: 28px !important;
+  }
+  
+  /* Two column grid for profile cards */
+  .grid-cols-1.lg\:grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 28px !important;
+  }
+  
+  /* Card spacing */
+  .space-y-4 > * {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Profile avatar size */
+  .w-24.h-24 {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  
+  /* Profile name */
+  .text-3xl {
+    font-size: 2.25rem !important;
+  }
+  
+  /* Card titles */
+  .text-xl {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Card padding */
+  .p-4 {
+    padding: 24px !important;
+  }
+}
+
+/* Laptop specific (1024px - 1600px) */
+@media screen and (min-width: 1024px) and (max-width: 1600px) {
+  .max-w-7xl {
+    max-width: 1280px !important;
+    padding: 0 40px !important;
+  }
+  
+  .grid-cols-1.lg\:grid-cols-2 {
+    gap: 32px !important;
+  }
+}
+
+/* Large desktop (1600px+) */
+@media screen and (min-width: 1600px) {
+  .max-w-7xl {
+    max-width: 1600px !important;
+    padding: 0 60px !important;
+  }
+  
+  .grid-cols-1.lg\:grid-cols-2 {
+    gap: 40px !important;
+  }
+}
+
+/* ========================================
+   iOS SPECIFIC
+   ======================================== */
+@supports (-webkit-touch-callout: none) {
+  /* iOS safe areas */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Prevent rubber band scrolling */
+  html, body {
+    overscroll-behavior-y: none;
+  }
+  
+  /* Fix iOS input zoom */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  
+  /* iOS button tap highlight */
+  button, a {
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+  }
+}
+
+/* ========================================
+   ANDROID SPECIFIC
+   ======================================== */
+@media screen and (min-width: 320px) and (max-width: 480px) and (orientation: portrait) {
+  /* Small Android phones */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+}
+
+/* ========================================
+   ORIENTATION SPECIFIC
+   ======================================== */
+
+/* Portrait mode - Stack vertically */
+@media screen and (orientation: portrait) {
+  .grid {
+    grid-auto-flow: row !important;
+  }
+  
+  /* Full width cards on small portrait screens */
+  @media (max-width: 768px) {
+    .grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+}
+
+/* Landscape mode - Use horizontal space */
+@media screen and (orientation: landscape) {
+  @media (max-width: 768px) {
+    /* Mobile landscape */
+    .toolbar {
+      min-height: 48px !important;
+    }
+    
+    .grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+}
+
+/* ========================================
+   TOUCH DEVICES
+   ======================================== */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  *:hover {
+    transition: none !important;
+  }
+  
+  /* Larger touch targets */
+  button, a, input, select {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Remove hover transforms */
+  .hover\:scale-105:hover,
+  .hover\:-translate-y-2:hover {
+    transform: none !important;
+  }
+}
+
+/* ========================================
+   HIGH DPI DISPLAYS
+   Retina, 4K monitors
+   ======================================== */
+@media screen and (-webkit-min-device-pixel-ratio: 2),
+       screen and (min-resolution: 192dpi),
+       screen and (min-resolution: 2dppx) {
+  /* Sharper text rendering */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  button, a {
+    border: 2px solid currentColor;
+  }
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+@media print {
+  /* Hide navigation and controls */
+  .sidenav, .toolbar, button, .mat-button {
+    display: none !important;
+  }
+  
+  /* Full width content */
+  .main-content, .page-content {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Page breaks */
+  .mat-card, mat-card {
+    page-break-inside: avoid;
+  }
+}
+
+/* ========================================
+   UTILITY CLASSES FOR RESPONSIVE
+   ======================================== */
+
+/* Hide on mobile */
+.hidden-mobile {
+  @media (max-width: 767px) {
+    display: none !important;
+  }
+}
+
+/* Hide on tablet */
+.hidden-tablet {
+  @media (min-width: 768px) and (max-width: 1023px) {
+    display: none !important;
+  }
+}
+
+/* Hide on desktop */
+.hidden-desktop {
+  @media (min-width: 1024px) {
+    display: none !important;
+  }
+}
+
+/* Show only on mobile */
+.mobile-only {
+  @media (min-width: 768px) {
+    display: none !important;
+  }
+}
+
+/* Show only on tablet */
+.tablet-only {
+  display: none !important;
+  @media (min-width: 768px) and (max-width: 1023px) {
+    display: block !important;
+  }
+}
+
+/* Show only on desktop */
+.desktop-only {
+  display: none !important;
+  @media (min-width: 1024px) {
+    display: block !important;
+  }
+}
+
+/* Responsive text alignment */
+.text-mobile-center {
+  @media (max-width: 767px) {
+    text-align: center !important;
+  }
+}
+
+/* Responsive padding */
+.p-responsive {
+  padding: 8px;
+  @media (min-width: 576px) { padding: 12px; }
+  @media (min-width: 768px) { padding: 16px; }
+  @media (min-width: 1024px) { padding: 20px; }
+  @media (min-width: 1200px) { padding: 24px; }
+}
+
+/* Responsive margin */
+.m-responsive {
+  margin: 8px;
+  @media (min-width: 576px) { margin: 12px; }
+  @media (min-width: 768px) { margin: 16px; }
+  @media (min-width: 1024px) { margin: 20px; }
+  @media (min-width: 1200px) { margin: 24px; }
+}

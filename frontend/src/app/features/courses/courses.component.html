@@ -1,0 +1,724 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900">
+  
+  <!-- Header -->
+  <div class="relative overflow-hidden bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50">
+    <div class="absolute inset-0 bg-gradient-to-r from-primary-500/10 via-purple-500/10 to-pink-500/10"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+            📚 Course Dashboard
+          </h1>
+          <p class="text-gray-600 dark:text-gray-400">
+            Discover courses and track your learning progress
+          </p>
+          <div class="mt-2 flex items-center space-x-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              <mat-icon class="text-sm mr-1">psychology</mat-icon>
+              AI-Powered Recommendations Active
+            </span>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <button mat-stroked-button color="accent" routerLink="/onboarding">
+            <mat-icon>edit</mat-icon>
+            Update Interests
+          </button>
+          <button mat-stroked-button color="primary" routerLink="/dashboard">
+            <mat-icon>dashboard</mat-icon>
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Direct AI Recommendations - No Tabs -->
+    <div class="pt-6">
+      
+      <!-- Loading State -->
+      <div *ngIf="loadingRecommendations()" class="flex flex-col items-center justify-center py-20">
+        <mat-spinner diameter="60" class="mb-4"></mat-spinner>
+        <p class="text-lg text-gray-600 dark:text-gray-400">🤖 AI is analyzing your profile...</p>
+        <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">Creating personalized recommendations just for you</p>
+      </div>
+      
+      <!-- Coming Soon Message - When user has interests but no matching courses -->
+      <div *ngIf="!loadingRecommendations() && noCoursesForInterests()" 
+           class="text-center py-20 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl shadow-lg border-2 border-purple-200 dark:border-purple-700">
+        <div class="flex flex-col items-center">
+          <mat-icon class="text-8xl text-purple-500 mb-6 animate-bounce">construction</mat-icon>
+          <h3 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            🚧 Coming Soon
+          </h3>
+          <p class="text-lg text-gray-700 dark:text-gray-300 mb-2 max-w-2xl px-4">
+            Courses for this interest are not available yet.
+          </p>
+          <p class="text-md text-gray-600 dark:text-gray-400 mb-6 max-w-2xl px-4">
+            We're working on adding courses for: <strong class="text-purple-600 dark:text-purple-400">{{userInterests().join(', ')}}</strong>
+          </p>
+          <div class="flex gap-4 mt-4">
+            <button mat-raised-button color="primary" routerLink="/onboarding">
+              <mat-icon>edit</mat-icon>
+              Update Interests
+            </button>
+            <button mat-stroked-button color="accent" (click)="noCoursesForInterests.set(false); loadCoursesAndGenerateRecommendations()">
+              <mat-icon>refresh</mat-icon>
+              Browse All Courses
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- All Available Courses When No AI Recommendations -->
+      <div *ngIf="!loadingRecommendations() && !noCoursesForInterests() && aiRecommendedCourses().length === 0">
+        <!-- Info Banner -->
+        <mat-card class="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 mb-6 border-l-4 border-blue-500">
+          <mat-card-content class="p-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <mat-icon class="text-4xl text-blue-600 dark:text-blue-400 mr-4">info</mat-icon>
+                <div>
+                  <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    📚 All Available Courses
+                  </h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Update your interests to get personalized AI-powered recommendations
+                  </p>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- All Courses Grid -->
+        <div *ngIf="!loadingCourses && filteredCourses().length > 0" 
+             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <mat-card *ngFor="let course of filteredCourses(); trackBy: trackCourse" 
+                    class="cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 rounded-xl overflow-hidden" 
+                    (click)="viewCourseDetails(course)">
+            <!-- Course Thumbnail -->
+            <div class="relative">
+              <div *ngIf="course.imageUrl" class="h-48 overflow-hidden">
+                <img [src]="course.imageUrl" 
+                     [alt]="course.title"
+                     class="w-full h-full object-cover"
+                     loading="lazy"
+                     (error)="onImageError($event, course)">
+              </div>
+              
+              <div *ngIf="!course.imageUrl" class="h-48 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center">
+                <mat-icon class="text-8xl text-white opacity-90">school</mat-icon>
+              </div>
+              
+              <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-gray-800 font-semibold px-3 py-1 rounded-full text-xs">
+                {{course.difficulty}}
+              </div>
+            </div>
+
+            <mat-card-content class="p-6">
+              <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white line-clamp-2 min-h-[56px]">
+                {{course.title}}
+              </h3>
+              
+              <p class="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2 min-h-[40px]">
+                {{course.description}}
+              </p>
+              
+              <div class="flex items-center gap-3 text-xs text-gray-500 mb-4 flex-wrap">
+                <span class="flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                  <mat-icon class="text-sm mr-1">person</mat-icon> 
+                  {{course.instructor}}
+                </span>
+                <span class="flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                  <mat-icon class="text-sm mr-1">schedule</mat-icon> 
+                  {{course.estimatedTime || course.duration}}h
+                </span>
+                <span class="flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                  <mat-icon class="text-sm mr-1">category</mat-icon>
+                  {{course.category}}
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between text-sm mb-4">
+                <div class="flex items-center">
+                  <mat-icon class="text-yellow-500 text-base mr-1">star</mat-icon>
+                  <span class="font-bold text-gray-900 dark:text-white">{{course.rating || 4.5}}</span>
+                  <span class="text-gray-500 ml-1">({{course.studentsCount || 0}} students)</span>
+                </div>
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions class="p-4 pt-0">
+              <button mat-raised-button color="primary" 
+                      (click)="enrollInCourse(course); $event.stopPropagation()" 
+                      class="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all">
+                <mat-icon class="mr-2">add_circle</mat-icon>
+                Enroll Now
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loadingCourses" class="flex flex-col items-center justify-center py-20">
+          <mat-spinner diameter="60" class="mb-4"></mat-spinner>
+          <p class="text-lg text-gray-600 dark:text-gray-400">Loading courses...</p>
+        </div>
+
+        <!-- No Courses Available -->
+        <div *ngIf="!loadingCourses && filteredCourses().length === 0" 
+             class="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+          <mat-icon class="text-6xl text-gray-400 mb-4">school</mat-icon>
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            No Courses Available
+          </h3>
+          <p class="text-gray-600 dark:text-gray-400">
+            Check back later for new courses
+          </p>
+        </div>
+      </div>
+      
+      <!-- ✨ AI RECOMMENDATIONS SECTION - TOP PRIORITY ✨ -->
+      <section *ngIf="!loadingRecommendations() && aiRecommendedCourses().length > 0" class="mb-12">
+            <!-- AI Recommendations Header -->
+            <mat-card class="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white mb-8 shadow-2xl border-2 border-purple-300 rounded-2xl overflow-hidden">
+              <div class="p-8">
+                <div class="flex items-center justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center mb-3">
+                      <mat-icon class="mr-3 text-5xl animate-pulse">auto_awesome</mat-icon>
+                      <div>
+                        <h2 class="text-4xl font-bold mb-1">
+                          🎯 Recommended For You
+                        </h2>
+                        <p class="text-purple-100 text-sm">
+                          Powered by Advanced AI • Updated in real-time
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <!-- User Context Display -->
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-3">
+                      <p class="text-sm font-semibold text-white/90 mb-3">
+                        📊 Your Learning Profile:
+                      </p>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <!-- Interests -->
+                        <div *ngIf="userInterests().length > 0" class="bg-white/10 rounded-lg p-3">
+                          <div class="flex items-center mb-2">
+                            <mat-icon class="text-yellow-300 text-sm mr-2">favorite</mat-icon>
+                            <span class="text-xs font-semibold text-yellow-300">Your Interests</span>
+                          </div>
+                          <div class="flex flex-wrap gap-1">
+                            <span *ngFor="let interest of userInterests().slice(0, 3)" 
+                                  class="text-xs bg-white/20 px-2 py-1 rounded-full text-white">
+                              {{interest}}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <!-- Skills -->
+                        <div *ngIf="userSkills().length > 0" class="bg-white/10 rounded-lg p-3">
+                          <div class="flex items-center mb-2">
+                            <mat-icon class="text-green-300 text-sm mr-2">verified</mat-icon>
+                            <span class="text-xs font-semibold text-green-300">Your Skills</span>
+                          </div>
+                          <div class="flex flex-wrap gap-1">
+                            <span *ngFor="let skill of userSkills().slice(0, 3)" 
+                                  class="text-xs bg-white/20 px-2 py-1 rounded-full text-white">
+                              {{skill}}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <!-- Progress -->
+                        <div class="bg-white/10 rounded-lg p-3">
+                          <div class="flex items-center mb-2">
+                            <mat-icon class="text-blue-300 text-sm mr-2">workspace_premium</mat-icon>
+                            <span class="text-xs font-semibold text-blue-300">Your Progress</span>
+                          </div>
+                          <p class="text-2xl font-bold text-white">
+                            {{completedCourses().length}}
+                          </p>
+                          <p class="text-xs text-white/70">Courses Completed</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 text-sm text-purple-200">
+                      <span class="flex items-center bg-white/10 px-3 py-1 rounded-full">
+                        <mat-icon class="text-base mr-1">psychology</mat-icon>
+                        Smart AI Analysis
+                      </span>
+                      <span class="flex items-center bg-white/10 px-3 py-1 rounded-full">
+                        <mat-icon class="text-base mr-1">trending_up</mat-icon>
+                        Next-Level Learning
+                      </span>
+                      <span class="flex items-center bg-white/10 px-3 py-1 rounded-full">
+                        <mat-icon class="text-base mr-1">emoji_objects</mat-icon>
+                        Career Growth
+                      </span>
+                    </div>
+                  </div>
+                  <div class="hidden lg:block">
+                    <mat-icon class="text-9xl opacity-20">lightbulb</mat-icon>
+                  </div>
+                </div>
+              </div>
+            </mat-card>
+
+            <!-- AI Recommended Courses Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <mat-card *ngFor="let course of aiRecommendedCourses(); let i = index" 
+                        class="cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-purple-200 rounded-xl overflow-hidden" 
+                        (click)="viewCourseDetails(course)">
+                <!-- Course Thumbnail with Pixabay Image -->
+                <div class="relative">
+                  <!-- ✅ PIXABAY IMAGE (NEW!) -->
+                  <div *ngIf="course.imageUrl" class="h-48 overflow-hidden">
+                    <img [src]="course.imageUrl" 
+                         [alt]="course.title"
+                         class="w-full h-full object-cover"
+                         loading="lazy"
+                         (error)="onImageError($event, course)">
+                  </div>
+                  
+                  <!-- Fallback gradient if no image -->
+                  <div *ngIf="!course.imageUrl" class="h-48 bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-600 flex items-center justify-center">
+                    <mat-icon class="text-8xl text-white opacity-90">school</mat-icon>
+                  </div>
+                  
+                  <!-- AI Match Score Badge -->
+                  <div class="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold px-3 py-1 rounded-full shadow-lg flex items-center animate-pulse">
+                    <mat-icon class="text-sm mr-1">stars</mat-icon>
+                    <span class="text-sm">{{course.relevanceScore || (95 - i * 5)}}% Match</span>
+                  </div>
+                  
+                  <!-- AI Pick Badge -->
+                  <div class="absolute top-3 left-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold px-3 py-1 rounded-full shadow-lg text-xs flex items-center">
+                    <mat-icon class="text-xs mr-1">auto_awesome</mat-icon>
+                    AI Pick #{{i + 1}}
+                  </div>
+                  
+                  <!-- Difficulty Badge -->
+                  <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-gray-800 font-semibold px-3 py-1 rounded-full text-xs">
+                    {{course.difficulty}}
+                  </div>
+                </div>
+
+                <mat-card-content class="p-6">
+                  <!-- Course Title -->
+                  <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white line-clamp-2 min-h-[56px]">
+                    {{course.title}}
+                  </h3>
+                  
+                  <!-- Course Description -->
+                  <p class="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2 min-h-[40px]">
+                    {{course.description}}
+                  </p>
+                  
+                  <!-- Course Meta Info -->
+                  <div class="flex items-center gap-3 text-xs text-gray-500 mb-4 flex-wrap">
+                    <span class="flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                      <mat-icon class="text-sm mr-1">person</mat-icon> 
+                      {{course.instructor}}
+                    </span>
+                    <span class="flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                      <mat-icon class="text-sm mr-1">schedule</mat-icon> 
+                      {{course.estimatedTime || course.duration}}h
+                    </span>
+                    <span class="flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                      <mat-icon class="text-sm mr-1">category</mat-icon>
+                      {{course.category}}
+                    </span>
+                  </div>
+                  
+                  <!-- AI Recommendation Reason Box - MOST IMPORTANT -->
+                  <div class="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 p-4 rounded-xl mb-4 border-l-4 border-purple-600 shadow-inner">
+                    <div class="flex items-start">
+                      <mat-icon class="text-purple-600 dark:text-purple-400 text-lg mr-2 mt-0.5 flex-shrink-0">lightbulb</mat-icon>
+                      <div class="flex-1">
+                        <p class="text-xs font-bold text-purple-900 dark:text-purple-200 mb-1 uppercase tracking-wide">
+                          💡 Why This Course?
+                        </p>
+                        <p class="text-sm text-purple-800 dark:text-purple-300 font-medium leading-relaxed">
+                          {{course.reason || 'Perfect match for your learning journey'}}
+                        </p>
+                        <div class="mt-2 text-xs text-purple-700 dark:text-purple-400 italic">
+                          Example: {{getExampleReason(course)}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Rating & Students -->
+                  <div class="flex items-center justify-between text-sm mb-4">
+                    <div class="flex items-center">
+                      <mat-icon class="text-yellow-500 text-base mr-1">star</mat-icon>
+                      <span class="font-bold text-gray-900 dark:text-white">{{course.rating || 4.5}}</span>
+                      <span class="text-gray-500 ml-1">({{course.studentsCount || 0}} students)</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+
+                <!-- Action Button -->
+                <mat-card-actions class="p-4 pt-0">
+                  <button mat-raised-button color="primary" 
+                          (click)="enrollInCourse(course); $event.stopPropagation()" 
+                          class="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all">
+                    <mat-icon class="mr-2">add_circle</mat-icon>
+                    Enroll Now
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </div>
+
+            <!-- Divider - HIDDEN -->
+            <div *ngIf="false" class="flex items-center my-12">
+              <div class="flex-1 border-t-2 border-gray-300 dark:border-gray-600"></div>
+              <span class="px-6 text-gray-600 dark:text-gray-400 font-bold text-lg flex items-center">
+                <mat-icon class="mr-2">explore</mat-icon>
+                All Available Courses
+              </span>
+              <div class="flex-1 border-t-2 border-gray-300 dark:border-gray-600"></div>
+            </div>
+          </section>
+          
+          <!-- Search and Filters - HIDDEN -->
+          <div *ngIf="false" class="mb-6 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              
+              <!-- Search -->
+              <mat-form-field class="w-full" appearance="outline">
+                <mat-label>Search Courses</mat-label>
+                <input matInput [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search by title or instructor...">
+                <mat-icon matPrefix>search</mat-icon>
+              </mat-form-field>
+              
+              <!-- Category Filter -->
+              <mat-form-field class="w-full" appearance="outline">
+                <mat-label>Category</mat-label>
+                <mat-select [(ngModel)]="selectedCategory" (selectionChange)="onFilterChange()">
+                  <mat-option value="">All Categories</mat-option>
+                  <mat-option value="Programming">Programming</mat-option>
+                  <mat-option value="Data Science">Data Science</mat-option>
+                  <mat-option value="Web Development">Web Development</mat-option>
+                  <mat-option value="Mobile Development">Mobile Development</mat-option>
+                  <mat-option value="Cloud Computing">Cloud Computing</mat-option>
+                  <mat-option value="AI/ML">AI/ML</mat-option>
+                  <mat-option value="DevOps">DevOps</mat-option>
+                </mat-select>
+              </mat-form-field>
+              
+              <!-- Difficulty Filter -->
+              <mat-form-field class="w-full" appearance="outline">
+                <mat-label>Difficulty</mat-label>
+                <mat-select [(ngModel)]="selectedDifficulty" (selectionChange)="onFilterChange()">
+                  <mat-option value="">All Levels</mat-option>
+                  <mat-option value="Beginner">Beginner</mat-option>
+                  <mat-option value="Intermediate">Intermediate</mat-option>
+                  <mat-option value="Advanced">Advanced</mat-option>
+                </mat-select>
+              </mat-form-field>
+              
+              <!-- Duration Filter -->
+              <mat-form-field class="w-full" appearance="outline">
+                <mat-label>Duration</mat-label>
+                <mat-select [(ngModel)]="selectedDuration" (selectionChange)="onFilterChange()">
+                  <mat-option value="">Any Duration</mat-option>
+                  <mat-option value="0-10">Under 10 hours</mat-option>
+                  <mat-option value="10-20">10-20 hours</mat-option>
+                  <mat-option value="20-50">20-50 hours</mat-option>
+                  <mat-option value="50+">50+ hours</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Loading State - HIDDEN -->
+          <div *ngIf="false && loadingCourses" class="flex justify-center py-12">
+            <mat-spinner diameter="50"></mat-spinner>
+          </div>
+          
+          <!-- No Courses Found - HIDDEN -->
+          <div *ngIf="false && !loadingCourses && filteredCourses().length === 0" 
+               class="text-center py-12 text-gray-500 dark:text-gray-400">
+            <mat-icon class="text-6xl mb-4 opacity-50">search_off</mat-icon>
+            <h3 class="text-xl font-medium mb-2">No Courses Found</h3>
+            <p class="mb-6">Try adjusting your filters or search query</p>
+          </div>
+          
+          <!-- Course Grid - HIDDEN -->
+          <div *ngIf="false && !loadingCourses && filteredCourses().length > 0" 
+               class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div *ngFor="let course of filteredCourses(); trackBy: trackCourse" 
+                 class="transform transition-all duration-300 hover:scale-105 cursor-pointer"
+                 (click)="openCourseDetail(course)">
+              <mat-card class="h-full hover:shadow-xl transition-all duration-300 overflow-hidden relative">
+                
+                <!-- AI Recommended Badge -->
+                <div *ngIf="course.aiRecommended" 
+                     class="absolute top-3 right-3 z-10 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center">
+                  <mat-icon class="text-sm mr-1">psychology</mat-icon>
+                  AI Recommended
+                </div>
+                
+                <!-- Course Icon/Image -->
+                <div class="relative h-48 bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                  <mat-icon class="text-6xl text-white opacity-80">
+                    {{ getCourseIcon(course.category) }}
+                  </mat-icon>
+                  
+                  <!-- Difficulty Badge -->
+                  <div class="absolute bottom-3 left-3 bg-white/90 dark:bg-gray-800/90 px-3 py-1 rounded-full">
+                    <span class="text-xs font-semibold"
+                          [class.text-green-600]="course.difficulty === 'Beginner'"
+                          [class.text-orange-600]="course.difficulty === 'Intermediate'"
+                          [class.text-red-600]="course.difficulty === 'Advanced'">
+                      {{ course.difficulty }}
+                    </span>
+                  </div>
+                </div>
+                
+                <mat-card-content class="p-4">
+                  <!-- Category Badge -->
+                  <span class="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded mb-2">
+                    {{ course.category }}
+                  </span>
+                  
+                  <!-- Course Title -->
+                  <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                    {{ course.title }}
+                  </h3>
+                  
+                  <!-- Course Info -->
+                  <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center">
+                      <mat-icon class="text-sm mr-2">person</mat-icon>
+                      <span>{{ course.instructor }}</span>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <mat-icon class="text-sm mr-2">schedule</mat-icon>
+                      <span>{{ course.duration }} hours</span>
+                    </div>
+                    
+                    <div class="flex items-center" *ngIf="course.rating">
+                      <mat-icon class="text-sm mr-2 text-yellow-500">star</mat-icon>
+                      <span>{{ course.rating }} ({{ course.enrolledStudents || 0 }} students)</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Enrollment Status -->
+                  <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div *ngIf="!course.isEnrolled" class="flex items-center justify-between">
+                      <span class="text-sm text-gray-600 dark:text-gray-400">Not enrolled</span>
+                      <button mat-raised-button color="primary" 
+                              (click)="enrollInCourse(course, $event)"
+                              class="transform hover:scale-105 transition-all">
+                        Enroll Now
+                      </button>
+                    </div>
+                    
+                    <div *ngIf="course.isEnrolled" class="flex items-center justify-between">
+                      <div class="flex items-center text-green-600">
+                        <mat-icon class="text-sm mr-1">check_circle</mat-icon>
+                        <span class="text-sm font-medium">Enrolled</span>
+                      </div>
+                      <button mat-stroked-button color="accent"
+                              (click)="$event.stopPropagation()"
+                              class="transform hover:scale-105 transition-all">
+                        Continue Learning
+                      </button>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </div>
+          
+        </div>
+      <!-- </mat-tab> REMOVED - No tabs structure -->
+      
+      <!-- Tab 2: My Courses - HIDDEN -->
+      <div *ngIf="false">
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="mr-2">school</mat-icon>
+          My Courses ({{ getEnrolledCoursesCount() }})
+        </ng-template>
+        
+        <div class="pt-6">
+          <div *ngIf="loadingCourses" class="flex justify-center py-12">
+            <mat-spinner diameter="50"></mat-spinner>
+          </div>
+          
+          <div *ngIf="!loadingCourses && getEnrolledCourses().length === 0" 
+               class="text-center py-12 text-gray-500 dark:text-gray-400">
+            <mat-icon class="text-6xl mb-4 opacity-50">school</mat-icon>
+            <h3 class="text-xl font-medium mb-2">Start Your Learning Journey</h3>
+            <p class="mb-6">Browse our AI-recommended courses tailored for you</p>
+          </div>
+          
+          <div *ngIf="!loadingCourses && getEnrolledCourses().length > 0" 
+               class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div *ngFor="let course of getEnrolledCourses(); trackBy: trackCourse" class="transform transition-all duration-300 hover:scale-105">
+              <mat-card class="h-full hover:shadow-xl transition-all duration-300 overflow-hidden">
+                
+                <!-- Course Icon -->
+                <div class="relative h-48 bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+                  <mat-icon class="text-6xl text-white opacity-80">
+                    {{ getCourseIcon(course.category) }}
+                  </mat-icon>
+                  <div class="absolute top-4 right-4">
+                    <mat-chip class="bg-white/20 text-white">
+                      {{ course.difficulty }}
+                    </mat-chip>
+                  </div>
+                  <div class="absolute bottom-4 left-4 right-4">
+                    <mat-progress-bar [value]="course.progress" class="rounded-full bg-white/20 h-2"></mat-progress-bar>
+                    <div class="text-white text-sm mt-1 font-medium">
+                      {{ course.progress }}% Complete
+                    </div>
+                  </div>
+                </div>
+                
+                <mat-card-content class="p-6 flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    {{ course.title }}
+                  </h3>
+                  <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                    {{ course.description }}
+                  </p>
+                  <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    <span class="flex items-center">
+                      <mat-icon class="text-sm mr-1">person</mat-icon>
+                      {{ course.instructor }}
+                    </span>
+                    <span class="flex items-center">
+                      <mat-icon class="text-sm mr-1">access_time</mat-icon>
+                      {{ course.estimatedTime }}
+                    </span>
+                  </div>
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                      {{ course.completedLessons }}/{{ course.totalLessons }} lessons
+                    </span>
+                    <div class="flex items-center">
+                      <mat-icon class="text-yellow-500 text-sm mr-1">star</mat-icon>
+                      <span class="text-sm">{{ course.rating }}</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Course Tags -->
+                  <div class="flex flex-wrap gap-2 mb-4">
+                    <mat-chip *ngFor="let tag of (course.tags || []).slice(0, 3)" class="text-xs bg-gray-100 dark:bg-gray-700">
+                      {{ tag }}
+                    </mat-chip>
+                  </div>
+                </mat-card-content>
+                
+                <mat-card-actions class="p-4 pt-0">
+                  <button mat-raised-button color="primary" [routerLink]="['/course', course.id]" class="w-full">
+                    <mat-icon>play_arrow</mat-icon>
+                    Continue Learning
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+    </div>
+    <!-- </mat-tab-group> REMOVED - No tabs structure -->
+
+    <!-- Learning Analytics Section - HIDDEN -->
+    <div *ngIf="false" class="mt-8 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+          <mat-icon class="text-primary-600 text-3xl mr-3">insights</mat-icon>
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Learning Analytics</h2>
+            <p class="text-gray-600 dark:text-gray-400">Track your learning progress with AI insights</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Progress Stats -->
+        <mat-card class="text-center">
+          <mat-card-content class="p-6">
+            <mat-icon class="text-4xl text-blue-600 mb-2">school</mat-icon>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ getEnrolledCoursesCount() }}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">Courses Enrolled</div>
+            <div class="mt-4 text-xs text-gray-500">
+              <mat-icon class="text-sm text-green-600">trending_up</mat-icon>
+              You're on track!
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="text-center">
+          <mat-card-content class="p-6">
+            <mat-icon class="text-4xl text-green-600 mb-2">trending_up</mat-icon>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ getInProgressCoursesCount() }}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
+            <div class="mt-4 text-xs text-gray-500">
+              <mat-icon class="text-sm text-blue-600">psychology</mat-icon>
+              Keep the momentum!
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="text-center">
+          <mat-card-content class="p-6">
+            <mat-icon class="text-4xl text-purple-600 mb-2">psychology</mat-icon>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ courses().length - getEnrolledCoursesCount() }}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">AI Recommendations</div>
+            <div class="mt-4 text-xs text-gray-500">
+              <mat-icon class="text-sm text-purple-600">auto_awesome</mat-icon>
+              Explore new topics
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- AI Insights -->
+      <div class="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-6">
+        <div class="flex items-start space-x-3">
+          <mat-icon class="text-purple-600 text-2xl">psychology</mat-icon>
+          <div class="flex-1">
+            <h3 class="font-semibold text-purple-900 dark:text-purple-200 mb-2">🎯 AI Learning Insights</h3>
+            <ul class="space-y-2 text-sm text-purple-800 dark:text-purple-300">
+              <li class="flex items-start">
+                <mat-icon class="text-sm mr-2 mt-0.5">check_circle</mat-icon>
+                <span>You're making excellent progress with {{ getInProgressCoursesCount() }} active courses</span>
+              </li>
+              <li class="flex items-start">
+                <mat-icon class="text-sm mr-2 mt-0.5">lightbulb</mat-icon>
+                <span>Based on your interests, we recommend exploring our {{ courses().length - getEnrolledCoursesCount() }} AI-selected courses</span>
+              </li>
+              <li class="flex items-start">
+                <mat-icon class="text-sm mr-2 mt-0.5">rocket_launch</mat-icon>
+                <span>Next recommended topic: Advanced concepts in your enrolled courses</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Course Detail Modal -->
+<app-course-detail 
+  *ngIf="showCourseDetail && selectedCourseForDetail"
+  [course]="selectedCourseForDetail"
+  (close)="closeCourseDetail()"
+  (enroll)="enrollInCourse($event)">
+</app-course-detail>

@@ -1,0 +1,86 @@
+/* Task Dialog Component Visibility Fix */
+.task-dialog-panel .mat-mdc-dialog-container {
+  overflow: visible !important;
+}
+
+.task-dialog-panel .mat-mdc-dialog-surface {
+  overflow: visible !important;
+}
+
+.task-dialog-panel .mat-mdc-dialog-content,
+.task-dialog-panel mat-dialog-content {
+  overflow-y: auto !important;
+  overflow-x: visible !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.task-dialog-panel form {
+  display: flex !important;
+  flex-direction: column !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.task-dialog-panel .mat-mdc-form-field {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.task-dialog-panel .mat-mdc-text-field-wrapper,
+.task-dialog-panel .mat-mdc-form-field-flex,
+.task-dialog-panel .mat-mdc-form-field-infix {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.task-dialog-panel input,
+.task-dialog-panel textarea,
+.task-dialog-panel .mat-mdc-select {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  color: #1f2937 !important;
+  background-color: white !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  padding: 8px !important;
+  caret-color: #3b82f6 !important;
+  z-index: 2 !important;
+}
+
+.task-dialog-panel input::placeholder,
+.task-dialog-panel textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 0.7 !important;
+}
+
+.task-dialog-panel input:focus,
+.task-dialog-panel textarea:focus {
+  color: #111827 !important;
+  outline: none !important;
+}
+
+.task-dialog-panel .mat-mdc-select-value,
+.task-dialog-panel .mat-mdc-select-value-text,
+.task-dialog-panel .mat-mdc-select-trigger {
+  color: #1f2937 !important;
+  background-color: transparent !important;
+}
+
+.task-dialog-panel .mat-mdc-form-field-infix {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.task-dialog-panel .mdc-text-field--filled {
+  background-color: white !important;
+}
+
+.task-dialog-panel .mat-mdc-input-element {
+  color: #1f2937 !important;
+  -webkit-text-fill-color: #1f2937 !important;
+}

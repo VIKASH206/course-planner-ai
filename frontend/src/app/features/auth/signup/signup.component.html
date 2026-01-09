@@ -1,0 +1,224 @@
+<div class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+  <div class="w-full space-y-6 auth-container" style="max-width: 36rem;">
+    <!-- Header -->
+    <div class="text-center">
+      <div class="mb-4">
+        <div class="mb-3">
+          <span class="text-4xl">🎉</span>
+        </div>
+        <h2 class="text-3xl font-extrabold text-white mb-2 auth-title">
+          Create Your Account
+        </h2>
+        <p class="text-gray-300 text-base">
+          Join Course Planner today
+        </p>
+      </div>
+    </div>
+
+    <!-- Signup Form -->
+    <div class="bg-white rounded-2xl shadow-2xl p-6 border-2 border-white/20 auth-form backdrop-blur-xl">
+      <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="space-y-4" novalidate>
+        <!-- First Name & Last Name in Grid -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <mat-form-field appearance="outline" class="w-full" floatLabel="always">
+              <mat-label>First Name</mat-label>
+              <input 
+                matInput 
+                type="text" 
+                formControlName="firstName"
+                placeholder="Enter your first name"
+                autocomplete="given-name">
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="firstName?.touched && firstName?.invalid">
+                {{ getErrorMessage('firstName') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="space-y-2">
+            <mat-form-field appearance="outline" class="w-full" floatLabel="always">
+              <mat-label>Last Name</mat-label>
+              <input 
+                matInput 
+                type="text" 
+                formControlName="lastName"
+                placeholder="Enter your last name"
+                autocomplete="family-name">
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="lastName?.touched && lastName?.invalid">
+                {{ getErrorMessage('lastName') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Email Field -->
+        <div class="space-y-2">
+          <mat-form-field appearance="outline" class="w-full" floatLabel="always">
+            <mat-label>Email Address</mat-label>
+            <input 
+              matInput 
+              type="email" 
+              formControlName="email"
+              placeholder="Enter your email"
+              autocomplete="email">
+            <mat-icon matSuffix>email</mat-icon>
+            <mat-error *ngIf="email?.touched && email?.invalid">
+              {{ getErrorMessage('email') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Role Selection Field -->
+        <div class="space-y-2">
+          <mat-form-field appearance="outline" class="w-full" floatLabel="always">
+            <mat-label>I am a</mat-label>
+            <mat-select formControlName="role" placeholder="Select your role">
+              <mat-option *ngFor="let role of roles" [value]="role.value">
+                {{ role.display }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>school</mat-icon>
+            <mat-error *ngIf="role?.touched && role?.invalid">
+              {{ getErrorMessage('role') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Password & Confirm Password in Grid -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <mat-form-field appearance="outline" class="w-full" floatLabel="always">
+              <mat-label>Password</mat-label>
+              <input 
+                matInput 
+                [type]="hidePassword() ? 'password' : 'text'" 
+                formControlName="password"
+                placeholder="Create a strong password"
+                autocomplete="new-password">
+              <button 
+                type="button" 
+                matSuffix 
+                mat-icon-button 
+                (click)="togglePasswordVisibility()"
+                class="text-gray-500 hover:text-gray-700">
+                <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-error *ngIf="password?.touched && password?.invalid">
+                {{ getErrorMessage('password') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="space-y-2">
+            <mat-form-field appearance="outline" class="w-full" floatLabel="always">
+              <mat-label>Confirm Password</mat-label>
+              <input 
+                matInput 
+                [type]="hideConfirmPassword() ? 'password' : 'text'" 
+                formControlName="confirmPassword"
+                placeholder="Confirm your password"
+                autocomplete="new-password">
+              <button 
+                type="button" 
+                matSuffix 
+                mat-icon-button 
+                (click)="toggleConfirmPasswordVisibility()"
+                class="text-gray-500 hover:text-gray-700">
+                <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-error *ngIf="(confirmPassword?.touched && confirmPassword?.invalid) || signupForm.hasError('passwordMismatch')">
+                {{ getErrorMessage('confirmPassword') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+        
+        <!-- Password Strength Indicator -->
+        <div *ngIf="password?.value" class="-mt-2">
+          <div class="flex items-center justify-between text-sm mb-1">
+            <span class="text-gray-600">Password Strength:</span>
+            <span [class]="passwordStrength().color">{{ passwordStrength().feedback }}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              class="h-2 rounded-full transition-all duration-300"
+              [class]="passwordStrength().score <= 2 ? 'bg-red-500' : passwordStrength().score <= 3 ? 'bg-yellow-500' : passwordStrength().score === 4 ? 'bg-blue-500' : 'bg-green-500'"
+              [style.width.%]="passwordStrength().score * 20">
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="flex items-start space-x-3 my-4">
+          <mat-checkbox 
+            formControlName="acceptTerms"
+            color="primary"
+            class="checkbox-custom mt-0.5">
+          </mat-checkbox>
+          <label class="text-sm text-gray-700 cursor-pointer select-none" (click)="toggleTerms()">
+            I agree to the 
+            <a href="#" class="text-indigo-600 hover:text-indigo-500 hover:underline font-semibold" (click)="$event.stopPropagation()">Terms of Service</a>
+            and 
+            <a href="#" class="text-indigo-600 hover:text-indigo-500 hover:underline font-semibold" (click)="$event.stopPropagation()">Privacy Policy</a>
+          </label>
+        </div>
+        <div *ngIf="acceptTerms?.touched && acceptTerms?.invalid" class="text-red-500 text-sm -mt-2 mb-2">
+          {{ getErrorMessage('acceptTerms') }}
+        </div>
+
+        <!-- Signup Button -->
+        <button 
+          type="submit" 
+          mat-raised-button 
+          color="primary"
+          class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-lg rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[56px] flex items-center justify-center space-x-2"
+          [disabled]="isLoading()">
+          <div class="flex items-center justify-center space-x-2">
+            <mat-spinner *ngIf="isLoading()" diameter="20" color="accent"></mat-spinner>
+            <span class="font-bold">{{ isLoading() ? 'Creating Account...' : 'Create Account' }}</span>
+            <mat-icon *ngIf="!isLoading()" class="ml-1">arrow_forward</mat-icon>
+          </div>
+        </button>
+        
+        
+      </form>
+
+      <!-- Divider -->
+      <div class="mt-6 mb-5">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t-2 border-gray-200"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-white text-gray-500 font-medium">Or continue with</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social Login Buttons -->
+      <div class="space-y-3">
+        <!-- Google Sign-In Button Container - GSI will render here -->
+        <div id="googleSignInButtonSignup" class="w-full flex items-center justify-center min-h-[44px]"></div>
+      </div>
+    </div>
+
+    <!-- Navigation Links -->
+
+    <!-- Navigation Links -->
+    <div class="mt-6 text-center">
+      <!-- Sign In Link -->
+      <div class="text-center">
+        <p class="text-base text-gray-200">
+          Already have an account?
+          <a 
+            routerLink="/auth/login" 
+            class="ml-1 font-bold text-indigo-300 hover:text-indigo-200 transition-all duration-300 inline-block px-3 py-1 rounded-md hover:bg-indigo-900/20">
+            Sign in here →
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

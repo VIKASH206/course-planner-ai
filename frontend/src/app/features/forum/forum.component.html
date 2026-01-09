@@ -1,0 +1,300 @@
+<div class="p-4 bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    
+    <!-- Header -->
+    <div class="mb-4 bg-white p-4 rounded-lg shadow border-l-4 border-purple-600">
+      <h1 class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
+        💬 Community Forum
+      </h1>
+      <p class="text-sm text-gray-600 mb-3">Connect, learn, and grow with fellow learners</p>
+      <div class="flex gap-2">
+        <button (click)="setView('groups')" 
+                [class]="currentView() === 'groups' ? 'px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all shadow' : 'px-4 py-2 bg-purple-200 text-purple-700 text-sm font-semibold rounded-lg hover:bg-purple-300 transition-all'">
+          📚 Browse Groups
+        </button>
+        <button (click)="setView('threads')" 
+                [class]="currentView() === 'threads' ? 'px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all shadow' : 'px-4 py-2 bg-purple-200 text-purple-700 text-sm font-semibold rounded-lg hover:bg-purple-300 transition-all'">
+          💬 Discussion Threads
+        </button>
+        <button (click)="createGroup()" class="ml-auto px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all shadow">
+          ➕ Create Group
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      
+      <div class="bg-gradient-to-br from-blue-500 to-blue-700 p-4 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+        <div class="text-4xl mb-2 text-center">👥</div>
+        <h3 class="text-sm font-bold text-white text-center mb-2">Total Groups</h3>
+        <p class="text-3xl font-bold text-white text-center mb-2">{{ forumGroups().length }}</p>
+        <div class="bg-blue-800 bg-opacity-50 p-2 rounded">
+          <p class="text-xs text-blue-100 text-center">Study Groups</p>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-green-500 to-green-700 p-4 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+        <div class="text-4xl mb-2 text-center">💬</div>
+        <h3 class="text-sm font-bold text-white text-center mb-2">Active Threads</h3>
+        <p class="text-3xl font-bold text-white text-center mb-2">{{ getActiveThreadsCount() }}</p>
+        <div class="bg-green-800 bg-opacity-50 p-2 rounded">
+          <p class="text-xs text-green-100 text-center">Discussions</p>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-purple-500 to-purple-700 p-4 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+        <div class="text-4xl mb-2 text-center">✍️</div>
+        <h3 class="text-sm font-bold text-white text-center mb-2">My Posts</h3>
+        <p class="text-3xl font-bold text-white text-center mb-2">{{ getUserPostsCount() }}</p>
+        <div class="bg-purple-800 bg-opacity-50 p-2 rounded">
+          <p class="text-xs text-purple-100 text-center">Contributions</p>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-pink-500 to-pink-700 p-4 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+        <div class="text-4xl mb-2 text-center">⭐</div>
+        <h3 class="text-sm font-bold text-white text-center mb-2">Reputation</h3>
+        <p class="text-3xl font-bold text-white text-center mb-2">{{ userReputation() || 0 }}</p>
+        <div class="bg-pink-800 bg-opacity-50 p-2 rounded">
+          <p class="text-xs text-pink-100 text-center">Points</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="grid lg:grid-cols-4 gap-4">
+      
+      <!-- Sidebar -->
+      <div class="lg:col-span-1">
+        <div class="space-y-4">
+          
+          <!-- Categories -->
+          <div class="bg-white p-4 rounded-lg shadow-lg border-t-4 border-purple-500">
+            <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <span class="text-2xl">📁</span>
+              Categories
+            </h3>
+            <div class="space-y-2">
+              @for (category of categories(); track category) {
+                <button class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all"
+                        [class]="selectedCategory() === category ? 
+                          'bg-gradient-to-r from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-purple-700 font-semibold' : 
+                          'text-gray-600 hover:bg-gray-100'"
+                        (click)="selectCategory(category)">
+                  {{ category }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="lg:col-span-3">
+        
+        @switch (currentView()) {
+          @case ('groups') {
+            <!-- Groups View -->
+            <div class="space-y-4">
+              
+              @if (filteredGroups().length > 0) {
+                <div class="grid md:grid-cols-2 gap-4">
+                  @for (group of filteredGroups(); track group.id) {
+                    <div class="bg-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-all border-l-4 border-purple-500">
+                      <div class="flex items-start gap-3 mb-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center flex-shrink-0">
+                          @if (group.avatar) {
+                            <img [src]="group.avatar" [alt]="group.name" class="w-full h-full rounded-full object-cover">
+                          } @else {
+                            <span class="text-white font-bold text-sm">{{ getGroupInitials(group.name) }}</span>
+                          }
+                        </div>
+                        
+                        <div class="flex-1">
+                          <div class="flex items-center gap-2 mb-1">
+                            <h3 class="font-bold text-gray-900">{{ group.name }}</h3>
+                            @if (group.isPrivate) {
+                              <span class="text-yellow-600 text-sm">🔒</span>
+                            }
+                          </div>
+                          
+                          <p class="text-gray-600 text-sm mb-2 line-clamp-2">
+                            {{ group.description }}
+                          </p>
+                          
+                          <div class="flex flex-wrap gap-1 mb-2">
+                            @for (tag of group.tags.slice(0, 3); track tag) {
+                              <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded">
+                                {{ tag }}
+                              </span>
+                            }
+                          </div>
+                          
+                          <div class="flex items-center justify-between text-xs text-gray-500">
+                            <div class="flex items-center gap-3">
+                              <span>👥 {{ group.memberCount }}</span>
+                              <span>💬 {{ group.threadCount }}</span>
+                            </div>
+                            <span>{{ formatTime(group.lastActivity) }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Action Buttons -->
+                      <div class="flex gap-2 pt-3 border-t border-gray-200">
+                        <button (click)="joinGroup(group)" 
+                                class="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all shadow flex items-center justify-center gap-2">
+                          <span>👥</span> Join Group
+                        </button>
+                        <button (click)="selectGroup(group)" 
+                                class="flex-1 px-3 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transform hover:scale-105 transition-all shadow flex items-center justify-center gap-2">
+                          <span>👁️</span> View Details
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="bg-white p-8 rounded-lg shadow-lg text-center border-2 border-dashed border-gray-300">
+                  <div class="text-4xl mb-3">📭</div>
+                  <h3 class="text-lg font-bold text-gray-700 mb-2">No groups found</h3>
+                  <p class="text-sm text-gray-500 mb-4">Create or join study groups to start collaborating!</p>
+                  <button (click)="createGroup()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all shadow">
+                    Create Group
+                  </button>
+                </div>
+              }
+            </div>
+          }
+          
+          @case ('threads') {
+            <!-- Threads View -->
+            <div class="space-y-4">
+              
+              <div class="flex items-center justify-between mb-3">
+                <h2 class="text-xl font-bold text-gray-900">💬 Discussion Threads</h2>
+                
+                <div class="flex items-center gap-2">
+                  <button (click)="createThread()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all shadow">
+                    ➕ Create Thread
+                  </button>
+                  
+                  <select [value]="sortBy()" (change)="onSortChange($event)" 
+                          class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium text-gray-700 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 bg-white cursor-pointer hover:border-gray-400 transition-colors shadow-sm">
+                    <option value="recent" class="py-2">Recent</option>
+                    <option value="popular" class="py-2">Popular</option>
+                    <option value="replies" class="py-2">Most Replies</option>
+                    <option value="views" class="py-2">Most Views</option>
+                  </select>
+                </div>
+              </div>
+              
+              @if (filteredThreads().length > 0) {
+                <div class="space-y-3">
+                  @for (thread of filteredThreads(); track thread.id) {
+                    <div class="bg-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-all cursor-pointer border-l-4 border-blue-500"
+                         (click)="openThread(thread)">
+                      <div class="flex gap-3">
+                        <!-- Thread Stats -->
+                        <div class="flex flex-col items-center justify-center min-w-[60px] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-2">
+                          @if (thread.isPinned) {
+                            <span class="text-orange-500 text-sm mb-1">📌</span>
+                          }
+                          @if (thread.isLocked) {
+                            <span class="text-red-500 text-sm mb-1">🔒</span>
+                          }
+                          <div class="text-xl font-bold text-purple-700">{{ thread.replyCount }}</div>
+                          <div class="text-xs text-gray-600">replies</div>
+                        </div>
+                        
+                        <!-- Thread Content -->
+                        <div class="flex-1">
+                          <h3 class="text-base font-bold text-gray-900 hover:text-purple-600 transition-colors mb-1">
+                            {{ thread.title }}
+                          </h3>
+                          
+                          <p class="text-gray-600 text-sm mb-2 line-clamp-2">
+                            {{ thread.content }}
+                          </p>
+                          
+                          <!-- Tags -->
+                          <div class="flex flex-wrap gap-1 mb-2">
+                            @for (tag of thread.tags; track tag) {
+                              <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                                {{ tag }}
+                              </span>
+                            }
+                          </div>
+                          
+                          <!-- Thread Meta -->
+                          <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                              <!-- Author -->
+                              <div class="flex items-center gap-1">
+                                <div class="w-6 h-6 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 flex items-center justify-center">
+                                  @if (thread.author?.avatar) {
+                                    <img [src]="thread.author.avatar" [alt]="thread.author?.name || 'User'" class="w-full h-full rounded-full object-cover">
+                                  } @else {
+                                    <span class="text-white text-xs font-bold">{{ getInitials(thread.author?.name || 'U') }}</span>
+                                  }
+                                </div>
+                                <span class="text-gray-700 font-medium">{{ thread.author?.name || 'Anonymous' }}</span>
+                                <span [class]="getRoleClass(thread.author?.role || 'student')" class="px-2 py-1 text-xs font-medium rounded">
+                                  {{ thread.author?.role || 'student' }}
+                                </span>
+                              </div>
+                              
+                              <span class="text-gray-500">{{ formatTime(thread.createdAt) }}</span>
+                            </div>
+                            
+                            <div class="flex items-center gap-3 text-gray-600">
+                              <span>👁️ {{ thread.viewCount }}</span>
+                              
+                              @if (thread.lastReply) {
+                                <span class="text-gray-500">Last: {{ thread.lastReply.author }}</span>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="bg-white p-8 rounded-lg shadow-lg text-center border-2 border-dashed border-gray-300">
+                  <div class="text-4xl mb-3">💬</div>
+                  <h3 class="text-lg font-bold text-gray-700 mb-2">No discussion threads yet</h3>
+                  <p class="text-sm text-gray-500 mb-4">Start a new discussion to get the conversation going!</p>
+                  <button (click)="createThread()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all shadow">
+                    Create Thread
+                  </button>
+                </div>
+              }
+            </div>
+          }
+          
+          @default {
+            <!-- Welcome View -->
+            <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+              <div class="text-5xl mb-3">🎓</div>
+              <h2 class="text-2xl font-bold text-gray-900 mb-3">Welcome to the Forum</h2>
+              <p class="text-gray-600 text-sm mb-6 max-w-md mx-auto">
+                Connect with fellow learners, share knowledge, and grow together in our vibrant community.
+              </p>
+              
+              <div class="flex justify-center gap-3">
+                <button (click)="setView('groups')" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all shadow">
+                  👥 Browse Groups
+                </button>
+                <button (click)="createThread()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow">
+                  ✨ Start Discussion
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

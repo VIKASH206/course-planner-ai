@@ -1,0 +1,575 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// Theme-Aware Background
+.min-h-screen {
+  position: relative;
+  min-height: 100vh;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: visible;
+  padding: 2rem 0;
+  
+  // Simple Light Theme Background - matching login page
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899, #f43f5e);
+  
+  // Dark Theme Background
+  &.dark {
+    background: linear-gradient(135deg, #1e293b, #312e81, #4c1d95, #831843);
+  }
+}
+
+// Enhanced auth container
+.auth-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 36rem; // Spacious fit for 2-column layout
+  margin: 2rem auto;
+  padding: 0 0.75rem 2rem 0.75rem;
+  
+  @media (max-width: 640px) {
+    max-width: 95%;
+    padding: 0 0.5rem 1rem 0.5rem;
+  }
+}
+
+// Glass morphism effect for form
+.bg-white {
+  backdrop-filter: blur(16px) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+  
+  .dark & {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .min-h-screen {
+    min-height: 100vh;
+    height: auto;
+    padding: 1rem 0 3rem 0;
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .auth-container {
+    max-width: 100%;
+    padding: 0 0.75rem 2rem 0.75rem;
+    margin: 1rem auto 2rem;
+    height: auto;
+    overflow: visible;
+  }
+}
+
+// Ensure scrolling works on all screen sizes
+@media (min-width: 481px) and (max-height: 900px) {
+  .min-h-screen {
+    align-items: flex-start;
+    padding: 2rem 0 3rem 0;
+  }
+  
+  .auth-container {
+    margin: 1rem auto 2rem;
+  }
+}
+
+/* Custom button styles */
+button[mat-raised-button], button[mat-stroked-button] {
+  &:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+}
+
+/* Form field customization with improved theme-based colors */
+::ng-deep {
+  .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      // Light theme colors
+      background-color: #ffffff !important;
+      border: none !important;
+      border-radius: 12px !important;
+      box-shadow: 0 0 0 2px #e5e7eb !important;
+      overflow: hidden !important;
+      
+      &:hover {
+        background-color: #f8fafc !important;
+        box-shadow: 0 0 0 2px #d1d5db !important;
+      }
+      
+      // Dark theme colors
+      .dark & {
+        background-color: #374151 !important;
+        box-shadow: 0 0 0 2px #4b5563 !important;
+        
+        &:hover {
+          background-color: #4b5563 !important;
+          box-shadow: 0 0 0 2px #6b7280 !important;
+        }
+      }
+      
+      // Force no inner borders for inputs only
+      input {
+        border: none !important;
+        outline: none !important;
+      }
+    }
+    
+    // Focused state colors - WITHOUT inner borders
+    &.mat-focused {
+      .mat-mdc-text-field-wrapper {
+        background-color: #ffffff !important;
+        box-shadow: 0 0 0 2px #3b82f6 !important;
+        border: none !important;
+        
+        input {
+          border: none !important;
+          outline: none !important;
+        }
+        
+        .dark & {
+          background-color: #4b5563 !important;
+          box-shadow: 0 0 0 2px #60a5fa !important;
+        }
+      }
+      
+      // Force remove focus borders
+      .mdc-text-field--focused {
+        .mdc-notched-outline {
+          display: none !important;
+        }
+      }
+    }
+    
+    // Completely hide ALL notched outline elements
+    .mdc-notched-outline,
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing,
+    .mat-mdc-notch-piece {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      border: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    
+    // Remove outline container
+    .mat-mdc-form-field-focus-overlay {
+      display: none !important;
+    }
+    
+    // Ensure text field has no borders
+    .mat-mdc-text-field-wrapper,
+    .mdc-text-field,
+    .mdc-text-field--filled,
+    .mdc-text-field--outlined {
+      border: none !important;
+      
+      &::before,
+      &::after {
+        display: none !important;
+        border: none !important;
+      }
+    }
+    
+    // Input text colors
+    .mat-mdc-input-element {
+      color: #000000 !important;
+      font-weight: 600 !important;
+      font-size: 15px !important;
+      border: none !important;
+      outline: none !important;
+      
+      .dark & {
+        color: #ffffff !important;
+      }
+      
+      &::placeholder {
+        color: #1f2937 !important;
+        font-weight: 500 !important;
+        
+        .dark & {
+          color: #d1d5db !important;
+        }
+      }
+    }
+    
+    // Label colors
+    .mat-mdc-floating-label {
+      color: #1f2937 !important;
+      font-weight: 600 !important;
+      font-size: 16px !important;
+      
+      .dark & {
+        color: #f3f4f6 !important;
+      }
+      
+      &.mdc-floating-label--float-above {
+        color: #3b82f6 !important;
+        font-weight: 600 !important;
+        
+        .dark & {
+          color: #60a5fa !important;
+        }
+      }
+    }
+    
+    .mdc-text-field--filled {
+      .mat-mdc-floating-label {
+        color: #1f2937 !important;
+        
+        .dark & {
+          color: #f3f4f6 !important;
+        }
+      }
+    }
+    
+    // Icon colors
+    .mat-icon {
+      color: #6b7280 !important;
+      border: none !important;
+      outline: none !important;
+      
+      .dark & {
+        color: #9ca3af !important;
+      }
+    }
+    
+    // Mat-select styling - show dropdown value
+    .mat-mdc-select {
+      color: #000000 !important;
+      font-weight: 600 !important;
+      font-size: 15px !important;
+      border: none !important;
+      outline: none !important;
+      
+      .dark & {
+        color: #ffffff !important;
+      }
+    }
+    
+    .mat-mdc-select-value {
+      color: #000000 !important;
+      font-weight: 600 !important;
+      
+      .dark & {
+        color: #ffffff !important;
+      }
+    }
+    
+    .mat-mdc-select-placeholder {
+      color: #1f2937 !important;
+      font-weight: 500 !important;
+      
+      .dark & {
+        color: #d1d5db !important;
+      }
+    }
+    
+    .mat-mdc-select-arrow {
+      color: #6b7280 !important;
+      border: none !important;
+      outline: none !important;
+    }
+    
+    .mat-mdc-select-trigger {
+      border: none !important;
+      outline: none !important;
+    }
+  }
+  
+  // Checkbox styling - make it visible and functional
+  .mat-mdc-checkbox,
+  .checkbox-custom {
+    display: inline-flex !important;
+    align-items: flex-start !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    z-index: 100 !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
+    min-width: 24px !important;
+    
+    // Remove ripple effect that might interfere
+    .mat-mdc-checkbox-ripple,
+    .mat-ripple-element,
+    .mdc-checkbox__ripple {
+      display: none !important;
+    }
+    
+    .mdc-checkbox {
+      padding: 0 !important;
+      margin: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 24px !important;
+      height: 24px !important;
+      pointer-events: auto !important;
+      flex-shrink: 0 !important;
+    }
+    
+    .mdc-checkbox__native-control {
+      width: 24px !important;
+      height: 24px !important;
+      cursor: pointer !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      z-index: 2 !important;
+      margin: 0 !important;
+      pointer-events: auto !important;
+    }
+    
+    .mdc-checkbox__background {
+      border: 2px solid #9ca3af !important;
+      border-radius: 6px !important;
+      background-color: #ffffff !important;
+      width: 24px !important;
+      height: 24px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      transition: all 0.2s ease !important;
+      pointer-events: none !important;
+      z-index: 1 !important;
+      
+      .dark & {
+        background-color: #1f2937 !important;
+        border-color: #6b7280 !important;
+      }
+    }
+    
+    .mdc-checkbox__checkmark {
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      width: 18px !important;
+      height: 18px !important;
+      opacity: 0 !important;
+      transition: opacity 0.2s ease !important;
+    }
+    
+    .mdc-checkbox__checkmark-path {
+      stroke: #ffffff !important;
+      stroke-width: 3.5px !important;
+      stroke-dashoffset: 0 !important;
+      stroke-dasharray: 29.7833385 !important;
+    }
+    
+    // Checked state
+    &.mat-mdc-checkbox-checked,
+    &.mdc-checkbox--selected {
+      .mdc-checkbox__background {
+        background-color: #3b82f6 !important;
+        border-color: #3b82f6 !important;
+        
+        .dark & {
+          background-color: #60a5fa !important;
+          border-color: #60a5fa !important;
+        }
+      }
+      
+      .mdc-checkbox__checkmark {
+        opacity: 1 !important;
+        display: block !important;
+      }
+    }
+    
+    // Hover state
+    &:hover {
+      .mdc-checkbox__background {
+        border-color: #6b7280 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        
+        .dark & {
+          border-color: #9ca3af !important;
+          box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1) !important;
+        }
+      }
+    }
+    
+    // Focus state
+    &:focus-within,
+    &.cdk-focused {
+      .mdc-checkbox__background {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+      }
+    }
+    
+    // Disabled state
+    &.mat-mdc-checkbox-disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
+      
+      .mdc-checkbox__native-control {
+        cursor: not-allowed !important;
+      }
+    }
+  }
+  
+  // Additional label styling
+  label {
+    &.cursor-pointer {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+    }
+  }
+}
+
+// Mat-select panel styling - dropdown visibility
+::ng-deep .mat-mdc-select-panel {
+  background-color: #ffffff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  margin-top: 8px !important;
+  
+  .mat-mdc-option {
+    color: #000000 !important;
+    font-weight: 500 !important;
+    padding: 12px 16px !important;
+    
+    &:hover {
+      background-color: #f3f4f6 !important;
+    }
+    
+    &.mat-mdc-option-active,
+    &.mdc-list-item--selected {
+      background-color: #eff6ff !important;
+      color: #3b82f6 !important;
+    }
+  }
+  
+  .dark & {
+    background-color: #374151 !important;
+    
+    .mat-mdc-option {
+      color: #ffffff !important;
+      
+      &:hover {
+        background-color: #4b5563 !important;
+      }
+      
+      &.mat-mdc-option-active,
+      &.mdc-list-item--selected {
+        background-color: #1e3a8a !important;
+        color: #60a5fa !important;
+      }
+    }
+  }
+}
+
+/* Hover effects for links */
+a {
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Custom spinner color */
+::ng-deep .mat-mdc-progress-spinner {
+  svg circle {
+    stroke: currentColor;
+  }
+}
+
+/* Social button hover effects */
+.social-btn {
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Password strength indicator colors */
+.text-red-500 {
+  color: #ef4444;
+}
+
+.text-yellow-500 {
+  color: #eab308;
+}
+
+.text-blue-500 {
+  color: #3b82f6;
+}
+
+.text-green-500 {
+  color: #22c55e;
+}
+
+.bg-red-500 {
+  background-color: #ef4444;
+}
+
+.bg-yellow-500 {
+  background-color: #eab308;
+}
+
+.bg-blue-500 {
+  background-color: #3b82f6;
+}
+
+.bg-green-500 {
+  background-color: #22c55e;
+}
+
+// Mobile scroll improvements
+@media (max-width: 480px) {
+  // Custom scrollbar for mobile
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 2px;
+  }
+  
+  // Prevent zoom on input focus
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  
+  // Touch optimizations
+  button,
+  a,
+  input {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+}

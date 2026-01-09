@@ -1,0 +1,142 @@
+<div class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-6 auth-container">
+    <!-- Header -->
+    <div class="text-center">
+      
+      <div class="mb-6">
+        <div class="mb-4">
+          <span class="text-5xl">👋</span>
+        </div>
+        <h2 class="text-4xl font-extrabold text-white mb-3 auth-title">
+          Welcome Back
+        </h2>
+        <p class="text-gray-300 text-lg">
+          Sign in to your Course Planner account
+        </p>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="bg-white rounded-3xl shadow-2xl p-8 border-2 border-white/20 auth-form backdrop-blur-xl">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5" novalidate>
+        
+        <!-- Email Field -->
+        <div class="space-y-2">
+          <mat-form-field appearance="outline" class="w-full" floatLabel="always">
+            <mat-label>Email</mat-label>
+            <input 
+              matInput 
+              type="email" 
+              formControlName="email"
+              placeholder="Enter your email"
+              autocomplete="email">
+            <mat-icon matSuffix>email</mat-icon>
+            <mat-error *ngIf="email?.touched && email?.invalid">
+              {{ getErrorMessage('email') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Password Field -->
+        <div class="space-y-2">
+          <mat-form-field appearance="outline" class="w-full" floatLabel="always">
+            <mat-label>Password</mat-label>
+            <input 
+              matInput 
+              [type]="hidePassword() ? 'password' : 'text'" 
+              formControlName="password"
+              placeholder="Enter your password"
+              autocomplete="current-password">
+            <button 
+              type="button" 
+              matSuffix 
+              mat-icon-button 
+              (click)="togglePasswordVisibility()"
+              class="text-gray-500 hover:text-gray-700">
+              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="password?.touched && password?.invalid">
+              {{ getErrorMessage('password') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Remember Me & Forgot Password -->
+        <div class="flex items-center justify-between">
+          <mat-checkbox formControlName="rememberMe" class="text-sm">
+            Remember me
+          </mat-checkbox>
+          <a 
+            routerLink="/auth/forgot-password" 
+            class="text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Forgot password?
+          </a>
+        </div>
+
+        <!-- Login Button -->
+        <button 
+          type="submit" 
+          mat-raised-button 
+          color="primary"
+          class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-lg rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[56px] flex items-center justify-center space-x-2"
+          [disabled]="isLoading()">
+          <div class="flex items-center justify-center space-x-2">
+            <mat-spinner *ngIf="isLoading()" diameter="20" color="accent"></mat-spinner>
+            <span class="font-bold">{{ isLoading() ? 'Signing In...' : 'Sign In' }}</span>
+            <mat-icon *ngIf="!isLoading()" class="ml-1">arrow_forward</mat-icon>
+          </div>
+        </button>
+        
+        <!-- Resend Verification Button -->
+        <button 
+          *ngIf="showResendButton()"
+          type="button"
+          (click)="resendVerification()"
+          class="w-full mt-3 py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold rounded-xl transition-all duration-200 border-2 border-blue-200">
+          📧 Resend Verification Email
+        </button>
+        
+        <!-- Form validation hint -->
+        
+      </form>
+
+      <!-- Divider -->
+      <div class="mt-6 mb-5">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t-2 border-gray-200"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-white text-gray-500 font-medium">Or continue with</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social Login Buttons -->
+      <div class="space-y-3">
+        <!-- Google Sign-In Button Container - GSI will render here -->
+        <div id="googleSignInButton" class="w-full flex items-center justify-center min-h-[44px]"></div>
+
+      </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <div class="mt-6 text-center">
+      <!-- Sign Up Link -->
+      <div class="text-center">
+        <p class="text-base text-gray-200">
+          Don't have an account?
+          <a 
+            routerLink="/auth/signup" 
+            class="ml-1 font-bold text-indigo-300 hover:text-indigo-200 transition-all duration-300 inline-block px-3 py-1 rounded-md hover:bg-indigo-900/20">
+            Sign up here →
+          </a>
+        </p>
+      </div>
+
+     
+          
+        </div>
+      </div>
+    </div>
+  

@@ -1,0 +1,156 @@
+<!-- Enhanced Chat Component with Conversation Management -->
+<div class="chat-layout">
+  <!-- Conversations Sidebar -->
+  <div class="conversations-sidebar">
+    <div class="sidebar-header">
+      <h3>Conversations</h3>
+      <button class="new-chat-btn" (click)="startNewConversation()" title="Start New Chat">
+        <i class="fas fa-plus"></i>
+      </button>
+    </div>
+    
+    <div class="conversations-list">
+      <div *ngFor="let conversation of conversations" 
+           class="conversation-item"
+           [class.active]="conversation.id === currentConversationId"
+           (click)="loadConversation(conversation.id)">
+        <div class="conversation-title">{{ conversation.title }}</div>
+        <div class="conversation-meta">
+          <span class="message-count">{{ conversation.messageCount }} messages</span>
+          <span class="last-activity">{{ conversation.lastActivity | date:'shortTime' }}</span>
+        </div>
+        <button class="delete-conversation" 
+                (click)="deleteConversation(conversation.id); $event.stopPropagation()"
+                title="Delete Conversation">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      
+      <div *ngIf="conversations.length === 0" class="no-conversations">
+        <i class="fas fa-comments"></i>
+        <p>No conversations yet</p>
+        <small>Start a new chat to begin</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Chat Area -->
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="chat-title">
+        <i class="fas fa-robot"></i>
+        <h2>AI Assistant</h2>
+        <small *ngIf="currentConversationId">Powered by Google Gemini</small>
+      </div>
+      <div class="chat-status" [class.connected]="!isLoading" [class.connecting]="isLoading">
+        <div class="status-indicator"></div>
+        <span *ngIf="!isLoading">Online</span>
+        <span *ngIf="isLoading">Thinking...</span>
+      </div>
+    </div>
+
+    <div #messageContainer class="message-container">
+      <div *ngFor="let message of messages" class="message" [class.user]="message.sender === 'user'" [class.bot]="message.sender === 'bot'">
+        <div class="message-avatar">
+          <i *ngIf="message.sender === 'user'" class="fas fa-user"></i>
+          <i *ngIf="message.sender === 'bot'" class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">
+          <div class="message-text">{{ removeMarkdown(message.content) }}</div>
+          <div class="message-time">{{ message.timestamp | date:'shortTime' }}</div>
+        </div>
+      </div>
+
+      <div *ngIf="isLoading" class="message bot">
+        <div class="message-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+      
+      <div *ngIf="messages.length === 0 && !isLoading" class="welcome-message">
+        <div class="welcome-content">
+          <i class="fas fa-brain"></i>
+          <h3>Welcome to AI Study Assistant</h3>
+          <p>I'm powered by AI and integrated with trending APIs for the latest tech insights. Ask me anything about your studies!</p>
+          
+          <!-- Quick Action Buttons -->
+          <div class="quick-actions-grid">
+            <button class="action-btn trending" (click)="showTrendingTopics()" title="Latest tech trends and market insights">
+              <i class="fas fa-chart-line"></i>
+              <span>Trending Topics</span>
+            </button>
+            
+            <button class="action-btn courses" (click)="getCourseRecommendations()" title="Personalized course recommendations">
+              <i class="fas fa-graduation-cap"></i>
+              <span>Course Recommendations</span>
+            </button>
+            
+            <button class="action-btn progress" (click)="showProgress()" title="Your learning analytics and achievements">
+              <i class="fas fa-chart-bar"></i>
+              <span>My Progress</span>
+            </button>
+            
+            <button class="action-btn study-plan" (click)="createStudyPlan()" title="Personalized study schedules">
+              <i class="fas fa-calendar-alt"></i>
+              <span>Study Plan</span>
+            </button>
+            
+            <button class="action-btn career" (click)="getCareerAdvice()" title="Career guidance based on market trends">
+              <i class="fas fa-briefcase"></i>
+              <span>Career Advice</span>
+            </button>
+            
+            <button class="action-btn help" (click)="showHelp()" title="Learn about all available features">
+              <i class="fas fa-question-circle"></i>
+              <span>Get Help</span>
+            </button>
+          </div>
+          
+          <!-- Sample Prompts -->
+          <div class="sample-prompts">
+            <h4>Or try these sample prompts:</h4>
+            <button class="prompt-btn" (click)="userInput = 'What are the highest paying tech jobs in 2024?'; sendMessage()">
+              What are the highest paying tech jobs in 2024?
+            </button>
+            <button class="prompt-btn" (click)="userInput = 'Should I learn React or Vue.js first?'; sendMessage()">
+              Should I learn React or Vue.js first?
+            </button>
+            <button class="prompt-btn" (click)="userInput = 'Create a learning path for becoming a data scientist'; sendMessage()">
+              Create a learning path for becoming a data scientist
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="apiError" class="error-message">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ apiError }}
+    </div>
+
+    <div class="input-container">
+      <div class="input-wrapper">
+        <textarea 
+          [(ngModel)]="userInput" 
+          (keydown)="onKeyPress($event)"
+          placeholder="Type your message here..." 
+          [disabled]="isLoading"
+          rows="1"
+          #textArea
+          (input)="autoResize(textArea)"
+        ></textarea>
+        <button (click)="sendMessage()" [disabled]="!userInput.trim() || isLoading" class="send-btn">
+          <i *ngIf="!isLoading" class="fas fa-paper-plane"></i>
+          <i *ngIf="isLoading" class="fas fa-spinner fa-spin"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,129 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+mat-card {
+  border: none;
+}
+
+mat-stepper {
+  background: transparent;
+}
+
+::ng-deep {
+  .mat-stepper-horizontal {
+    background: transparent !important;
+  }
+
+  .mat-step-header {
+    &.cdk-keyboard-focused,
+    &.cdk-program-focused,
+    &:hover {
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+  }
+
+  .mat-step-label {
+    color: rgb(107, 114, 128);
+    
+    &.mat-step-label-active {
+      color: rgb(59, 130, 246);
+    }
+
+    &.mat-step-label-selected {
+      color: rgb(59, 130, 246);
+    }
+  }
+
+  .mat-form-field-appearance-outline {
+    .mat-form-field-outline {
+      color: rgba(209, 213, 219, 0.5) !important;
+    }
+    
+    .mat-form-field-outline-thick {
+      color: rgba(209, 213, 219, 0.5) !important;
+    }
+    
+    // Hide the inner outline to prevent double border
+    .mat-form-field-outline-start,
+    .mat-form-field-outline-gap,
+    .mat-form-field-outline-end {
+      border-width: 1px !important;
+    }
+
+    &.mat-focused {
+      .mat-form-field-outline-thick {
+        color: rgb(59, 130, 246) !important;
+      }
+      
+      .mat-form-field-outline-start,
+      .mat-form-field-outline-gap,
+      .mat-form-field-outline-end {
+        border-width: 2px !important;
+      }
+    }
+  }
+
+  .mat-radio-button {
+    display: block;
+    width: 100%;
+    
+    .mat-radio-container {
+      margin-right: 12px;
+    }
+
+    &.mat-radio-checked {
+      .mat-radio-outer-circle {
+        border-color: rgb(59, 130, 246);
+      }
+      
+      .mat-radio-inner-circle {
+        background-color: rgb(59, 130, 246);
+      }
+    }
+  }
+
+  .dark {
+    .mat-form-field-appearance-outline {
+      .mat-form-field-outline {
+        color: rgba(75, 85, 99, 0.5);
+      }
+    }
+
+    .mat-step-label {
+      color: rgb(156, 163, 175);
+      
+      &.mat-step-label-active {
+        color: rgb(96, 165, 250);
+      }
+
+      &.mat-step-label-selected {
+        color: rgb(96, 165, 250);
+      }
+    }
+  }
+}
+
+// Loading spinner
+mat-spinner {
+  ::ng-deep circle {
+    stroke: rgb(59, 130, 246);
+  }
+}
+
+// Animations
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.p-6 {
+  animation: fadeInUp 0.3s ease-out;
+}

@@ -1,0 +1,43 @@
+# Build outputs
+backend/target/
+frontend/dist/
+frontend/.angular/
+.dist/
+
+# Dependencies
+**/node_modules/
+backend/apache-maven*/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+
+# Scripts and documentation (optional - remove if you want to keep)
+*.bat
+*-quickstart.ps1
+*_SUMMARY.md
