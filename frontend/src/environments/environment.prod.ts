@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-backend-url.railway.app/api', // ⚠️ UPDATE this after deploying backend to Railway or Render
+  apiUrl: 'https://course-planner-ai.onrender.com/api',
   googleClientId: '66536367598-atunenteev5ii6fb0bangm1ac2raogkj.apps.googleusercontent.com',
   enablePWA: true,
   enableAnalytics: true,
