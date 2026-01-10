@@ -51,6 +51,13 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         
+        <!-- SendGrid HTTP API (bypasses SMTP port blocking) -->
+        <dependency>
+            <groupId>com.sendgrid</groupId>
+            <artifactId>sendgrid-java</artifactId>
+            <version>4.10.2</version>
+        </dependency>
+        
         <!-- HTTP Client for Gemini API -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

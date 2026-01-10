@@ -1,71 +1,74 @@
 package com.courseplanner.service;
 
+import com.sendgrid.*;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import jakarta.mail.internet.MimeMessage;
+
+import java.io.IOException;
 
 /**
- * Email Service for sending password reset emails
+ * Email Service for sending password reset emails using SendGrid HTTP API
  */
 @Service
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
+    @Value("${SENDGRID_API_KEY:}")
+    private String sendGridApiKey;
 
-    @Value("${spring.mail.username:noreply@courseplanner.com}")
+    @Value("${SENDGRID_FROM_EMAIL:noreply@courseplanner.com}")
     private String fromEmail;
 
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
 
-    @Value("${spring.mail.enabled:false}")
-    private boolean emailEnabled;
-
     /**
-     * Send password reset email with reset link
+     * Send password reset email with reset link using SendGrid HTTP API
      * @param toEmail Recipient email address
-     * @param resetToken Password reset token (for now, placeholder)
+     * @param resetToken Password reset token
      */
     public void sendPasswordResetEmail(String toEmail, String resetToken) {
         try {
             logger.info("Preparing to send password reset email to: {}", toEmail);
 
-            // Check if email is enabled and configured
-            if (mailSender == null || !emailEnabled) {
-                logger.warn("⚠️ Email service not configured. Skipping email send.");
+            // Check if SendGrid API key is configured
+            if (sendGridApiKey == null || sendGridApiKey.trim().isEmpty()) {
+                logger.warn("⚠️ SendGrid API key not configured. Skipping email send.");
                 logger.info("📧 Mock Email: Password reset link would be sent to: {}", toEmail);
                 logger.info("🔗 Reset Link: {}/auth/reset-password?token={}&email={}", frontendUrl, resetToken, toEmail);
-                return; // Skip actual email sending
+                return;
             }
 
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            Email from = new Email(fromEmail);
+            Email to = new Email(toEmail);
+            String subject = "Reset Your Password - Course Planner AI";
+            Content content = new Content("text/html", buildPasswordResetEmailHtml(toEmail, resetToken));
+            
+            Mail mail = new Mail(from, subject, to, content);
+            SendGrid sg = new SendGrid(sendGridApiKey);
+            Request request = new Request();
+            
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            
+            Response response = sg.api(request);
+            
+            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
+                logger.info("✅ Password reset email sent successfully to: {} (Status: {})", toEmail, response.getStatusCode());
+            } else {
+                logger.error("❌ SendGrid API error: Status {}, Body: {}", response.getStatusCode(), response.getBody());
+            }
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Reset Your Password - Course Planner AI");
-
-            // Create HTML email content
-            String htmlContent = buildPasswordResetEmailHtml(toEmail, resetToken);
-            helper.setText(htmlContent, true);
-
-            // Send email
-            mailSender.send(mimeMessage);
-            logger.info("✅ Password reset email sent successfully to: {}", toEmail);
-
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error("❌ Failed to send password reset email to {}: {}", toEmail, e.getMessage(), e);
-            // Don't throw exception - just log it
-            logger.warn("Email sending failed but continuing. Configure email settings to enable email functionality.");
+            logger.warn("Email sending failed but continuing. Check SendGrid API key and configuration.");
         }
     }
 
@@ -149,27 +152,9 @@ public class EmailService {
         return html.toString();
     }
 
+
     /**
-     * Send simple text email (fallback)
-     */
-    public void sendSimpleEmail(String toEmail, String subject, String text) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(toEmail);
-            message.setSubject(subject);
-            message.setText(text);
-            
-            mailSender.send(message);
-            logger.info("Simple email sent to: {}", toEmail);
-        } catch (Exception e) {
-            logger.error("Failed to send simple email: {}", e.getMessage());
-            throw new RuntimeException("Failed to send email: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Send email verification link after signup
+     * Send email verification link after signup using SendGrid HTTP API
      * @param toEmail Recipient email address
      * @param verificationToken Email verification token
      */
@@ -177,32 +162,38 @@ public class EmailService {
         try {
             logger.info("Preparing to send verification email to: {}", toEmail);
 
-            // Check if email is enabled and configured
-            if (mailSender == null || !emailEnabled) {
-                logger.warn("⚠️ Email service not configured. Skipping email send.");
+            // Check if SendGrid API key is configured
+            if (sendGridApiKey == null || sendGridApiKey.trim().isEmpty()) {
+                logger.warn("⚠️ SendGrid API key not configured. Skipping email send.");
                 logger.info("📧 Mock Email: Verification link would be sent to: {}", toEmail);
                 logger.info("🔗 Verification Link: {}/auth/verify-email?token={}&email={}", frontendUrl, verificationToken, toEmail);
-                return; // Skip actual email sending
+                return;
             }
 
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            Email from = new Email(fromEmail);
+            Email to = new Email(toEmail);
+            String subject = "Verify Your Email - Course Planner AI";
+            Content content = new Content("text/html", buildVerificationEmailHtml(toEmail, verificationToken));
+            
+            Mail mail = new Mail(from, subject, to, content);
+            SendGrid sg = new SendGrid(sendGridApiKey);
+            Request request = new Request();
+            
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            
+            Response response = sg.api(request);
+            
+            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
+                logger.info("✅ Verification email sent successfully to: {} (Status: {})", toEmail, response.getStatusCode());
+            } else {
+                logger.error("❌ SendGrid API error: Status {}, Body: {}", response.getStatusCode(), response.getBody());
+            }
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Verify Your Email - Course Planner AI");
-
-            // Create HTML email content
-            String htmlContent = buildVerificationEmailHtml(toEmail, verificationToken);
-            helper.setText(htmlContent, true);
-
-            // Send email
-            mailSender.send(mimeMessage);
-            logger.info("✅ Verification email sent successfully to: {}", toEmail);
-
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error("❌ Failed to send verification email to {}: {}", toEmail, e.getMessage(), e);
-            logger.warn("Email sending failed but continuing. Configure email settings to enable email functionality.");
+            logger.warn("Email sending failed but continuing. Check SendGrid API key and configuration.");
         }
     }
     
