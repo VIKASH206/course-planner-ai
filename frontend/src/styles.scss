@@ -9,6 +9,9 @@
 /* Import Responsive Styles */
 @import './responsive.scss';
 
+/* Import Admin Mobile Styles */
+@import './app/features/admin/admin-mobile.scss';
+
 /* Import Custom Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
