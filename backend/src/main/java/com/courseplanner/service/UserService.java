@@ -60,22 +60,11 @@ public class UserService {
             user.setRole("STUDENT");
         }
         
-        // Email verification setup
-        user.setEmailVerified(false);
-        String verificationToken = java.util.UUID.randomUUID().toString();
-        user.setVerificationToken(verificationToken);
-        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24)); // 24 hours expiry
+        // Auto-verify email for production (email service may not be configured)
+        user.setEmailVerified(true);
         
         // Save user
         User savedUser = userRepository.save(user);
-        
-        // Send verification email
-        try {
-            emailService.sendVerificationEmail(user.getEmail(), verificationToken);
-        } catch (Exception e) {
-            // Log error but don't fail signup
-            System.err.println("Failed to send verification email: " + e.getMessage());
-        }
 
         return savedUser;
     }
