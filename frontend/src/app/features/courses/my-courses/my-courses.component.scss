@@ -881,5 +881,59 @@
     .courses-grid {
       grid-template-columns: 1fr;
     }
+
+    // Mobile responsive button styling
+    .course-footer {
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch !important;
+
+      .enrolled-date {
+        text-align: center;
+        width: 100%;
+      }
+
+      .continue-btn {
+        width: 100%;
+        padding: 12px 16px !important;
+        height: auto !important;
+        min-height: 44px;
+
+        mat-icon {
+          margin-right: 8px;
+        }
+
+        span {
+          font-size: 15px;
+          font-weight: 600;
+        }
+      }
+    }
+
+    // Course card adjustments for mobile
+    .course-card {
+      .course-body {
+        padding: 16px;
+
+        .course-title {
+          font-size: 18px;
+          line-height: 1.4;
+        }
+
+        .course-description {
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .course-info-row {
+          flex-wrap: wrap;
+          gap: 8px;
+
+          .info-item {
+            font-size: 13px;
+          }
+        }
+      }
+    }
   }
 }
