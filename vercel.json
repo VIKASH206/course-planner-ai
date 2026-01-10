@@ -1,4 +1,7 @@
 {
+  "buildCommand": "npm run build -- --configuration production",
+  "outputDirectory": "dist/course-planner-frontend/browser",
+  "framework": "angular",
   "rewrites": [
     {
       "source": "/(.*)",
