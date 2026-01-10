@@ -1,5 +1,12 @@
 // Global mobile responsive styles for all admin pages
 @media (max-width: 768px) {
+  // Hide navbar page title on mobile (duplicate header)
+  .admin-navbar {
+    .page-title {
+      display: none !important;
+    }
+  }
+
   // Page headers
   .admin-page-header,
   .page-header {
