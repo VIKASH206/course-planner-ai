@@ -2,7 +2,6 @@ import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, withFetch } from '@angular/common/http';
-import { provideServiceWorker } from '@angular/service-worker';
 
 // Interceptors
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
@@ -44,12 +43,6 @@ export const appConfig: ApplicationConfig = {
     
     // Animations
     provideAnimations(),
-    
-    // Service Worker (PWA)
-    provideServiceWorker('ngsw-worker.js', {
-      enabled: !isDevMode(),
-      registrationStrategy: 'registerWhenStable:30000'
-    }),
     
     // NgRx Store
     provideStore(reducers, { metaReducers }),
