@@ -46,6 +46,9 @@ public class SecurityConfig {
             
             // Authorization Rules
             .authorizeHttpRequests(auth -> auth
+                // Health check endpoints - MUST be first for monitoring (UptimeRobot, etc.)
+                .requestMatchers("/", "/health", "/health/**", "/api/health", "/api/health/**").permitAll()
+                
                 // Public endpoints - No authentication required
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/public/**").permitAll()
