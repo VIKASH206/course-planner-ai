@@ -92,23 +92,34 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        
+        // Health check endpoints - Allow all origins without credentials
+        CorsConfiguration healthConfig = new CorsConfiguration();
+        healthConfig.setAllowedOriginPatterns(Arrays.asList("*"));
+        healthConfig.setAllowedMethods(Arrays.asList("GET", "OPTIONS"));
+        healthConfig.setAllowedHeaders(Arrays.asList("*"));
+        healthConfig.setAllowCredentials(false);
+        healthConfig.setMaxAge(3600L);
+        source.registerCorsConfiguration("/health/**", healthConfig);
+        source.registerCorsConfiguration("/api/health/**", healthConfig);
+        source.registerCorsConfiguration("/", healthConfig);
+        
+        // All other endpoints - Specific origins with credentials for OAuth/Sessions
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow localhost and IP address access for multi-device support
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:*",
             "http://192.168.*:*",
             "http://10.*:*",
             "https://course-planner-ai-sigma.vercel.app",
-            "https://*.vercel.app",
-            "*"  // Allow all origins for health checks and public endpoints
+            "https://*.vercel.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(false);  // Disabled to allow wildcard origins
+        configuration.setAllowCredentials(true);  // Required for OAuth and sessions
         configuration.setMaxAge(3600L);
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+        
         return source;
     }
 
