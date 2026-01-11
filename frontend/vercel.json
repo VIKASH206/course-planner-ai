@@ -1,9 +1,8 @@
 {
-  "version": 2,
-  "buildCommand": "npm ci && npm run build",
-  "outputDirectory": "dist/course-planner-frontend",
   "framework": null,
   "installCommand": "npm ci",
+  "buildCommand": "npm ci && npm run build",
+  "outputDirectory": "dist/course-planner-frontend",
   "routes": [
     {
       "src": "/assets/(.*)",
@@ -16,34 +15,6 @@
     {
       "src": "/(.*)",
       "dest": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    },
-    {
-      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
     }
   ]
 }
