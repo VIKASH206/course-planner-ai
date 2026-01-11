@@ -2,13 +2,15 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { ThemeService } from './core/services/theme.service';
+import { LoadingIndicatorComponent } from './shared/components/loading-indicator.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet],
+  imports: [CommonModule, RouterOutlet, LoadingIndicatorComponent],
   template: `
     <div class="app-container">
+      <app-loading-indicator></app-loading-indicator>
       <router-outlet></router-outlet>
     </div>
   `,

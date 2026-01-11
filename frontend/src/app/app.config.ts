@@ -1,10 +1,11 @@
 import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, withFetch } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, withInterceptors, HTTP_INTERCEPTORS, withFetch } from '@angular/common/http';
 
 // Interceptors
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { timeoutRetryInterceptor } from './core/interceptors/timeout-retry.interceptor';
 
 // NgRx
 import { provideStore } from '@ngrx/store';
@@ -31,7 +32,8 @@ export const appConfig: ApplicationConfig = {
     
     // HTTP Client with interceptors
     provideHttpClient(
-      withInterceptorsFromDi()
+      withInterceptorsFromDi(),
+      withInterceptors([timeoutRetryInterceptor])
     ),
     
     // HTTP Interceptors
