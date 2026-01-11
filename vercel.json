@@ -1,4 +1,5 @@
 {
+  "installCommand": "cd frontend && npm ci",
   "buildCommand": "cd frontend && npm run build -- --configuration production",
   "outputDirectory": "frontend/dist/course-planner-frontend/browser",
   "framework": "angular",
