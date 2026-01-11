@@ -99,11 +99,12 @@ public class SecurityConfig {
             "http://192.168.*:*",
             "http://10.*:*",
             "https://course-planner-ai-sigma.vercel.app",
-            "https://*.vercel.app"
+            "https://*.vercel.app",
+            "*"  // Allow all origins for health checks and public endpoints
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(false);  // Disabled to allow wildcard origins
         configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

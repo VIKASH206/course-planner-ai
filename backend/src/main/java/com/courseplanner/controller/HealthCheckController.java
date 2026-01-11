@@ -16,9 +16,9 @@ import java.util.Map;
  * - Does NOT access database
  * - Returns immediately with 200 OK
  * - Perfect for waking up sleeping Render instances
+ * - CORS handled by SecurityConfig globally
  */
 @RestController
-@CrossOrigin(origins = "*")  // Allow all origins for health checks
 public class HealthCheckController {
 
     /**
