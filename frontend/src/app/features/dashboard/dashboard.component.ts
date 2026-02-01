@@ -343,11 +343,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       console.log('☢️ Nuclear logout from dashboard - everything cleared');
       console.log('🔄 Redirecting to login...');
       
-      // Force redirect with page reload
-      window.location.href = 'http://localhost:4200/auth/login';
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Force redirect with page reload (use relative path for deployed site)
+      window.location.href = '/auth/login';
       
     } catch (error) {
       console.error('❌ Logout error:', error);

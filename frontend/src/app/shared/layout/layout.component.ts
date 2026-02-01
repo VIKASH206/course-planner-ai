@@ -325,11 +325,8 @@ export class LayoutComponent {
       
       console.log('☢️ Nuclear logout from layout - everything cleared');
       
-      // Force redirect to login
-      window.location.href = 'http://localhost:4200/auth/login';
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Force redirect to login (use relative path for deployed site)
+      window.location.href = '/auth/login';
       
     } catch (error) {
       console.error('❌ Layout logout error:', error);
