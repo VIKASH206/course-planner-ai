@@ -42,3 +42,4 @@ yarn-error.log*
 *-quickstart.ps1
 *_SUMMARY.md
 .vercel
+.env*.local

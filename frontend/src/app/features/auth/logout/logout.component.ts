@@ -36,11 +36,11 @@ export class LogoutComponent implements OnInit {
     // Clear auth state in service
     this.authService.logout();
     
-    // Show logout message and redirect
+    // Show logout message and redirect using Angular Router
     console.log('User logged out successfully');
     setTimeout(() => {
-      // Force navigation to login page
-      window.location.href = '/auth/login';
+      // Use Angular Router for navigation (works on deployed site)
+      this.router.navigate(['/auth/login']);
     }, 500);
   }
 }
