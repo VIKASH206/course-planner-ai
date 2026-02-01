@@ -41,3 +41,4 @@ yarn-error.log*
 *.bat
 *-quickstart.ps1
 *_SUMMARY.md
+.vercel
