@@ -55,19 +55,15 @@
       console.log('🗑️ All data cleared by emergency logout');
       console.log('🔄 Force reloading page...');
       
-      // Force complete page reload to clear Angular state
-      window.location.href = 'http://localhost:4200/auth/login';
-      setTimeout(() => {
-        window.location.reload(true);
-      }, 100);
+      // Force complete page reload to clear Angular state (use relative path)
+      window.location.href = '/auth/login';
     };
     
     window.forceReload = function() {
       console.log('🔄 FORCE RELOAD TO LOGIN');
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = 'http://localhost:4200/auth/login';
-      window.location.reload(true);
+      window.location.href = '/auth/login';
     };
     
     // Nuclear option - complete browser cache clear
@@ -93,7 +89,7 @@
       }
       
       console.log('☢️ Everything cleared, reloading...');
-      window.location.replace('http://localhost:4200/auth/login');
+      window.location.replace('/auth/login');
     };
     
     // Global logout interceptor - catch any logout clicks
