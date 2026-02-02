@@ -289,6 +289,7 @@ public class GeminiService {
             User user = userRepository.findById(userId).orElse(null);
             
             if (user == null) {
+                System.err.println("❌ User not found with ID: " + userId);
                 return "Please log in to get personalized course recommendations!";
             }
 
@@ -296,9 +297,25 @@ public class GeminiService {
             List<String> userInterests = user.getInterests();
             String experienceLevel = user.getExperienceLevel();
             
+            System.out.println("========================================");
             System.out.println("👤 User: " + user.getUsername());
-            System.out.println("🎯 Interests: " + userInterests);
+            System.out.println("🆔 User ID: " + userId);
+            System.out.println("🎯 Interests: " + (userInterests != null ? userInterests : "NULL"));
             System.out.println("📊 Experience Level: " + experienceLevel);
+            System.out.println("📧 Email: " + user.getEmail());
+            System.out.println("========================================");
+            
+            // Check if user has no interests set
+            if (userInterests == null || userInterests.isEmpty()) {
+                System.out.println("⚠️ User has no interests set in profile");
+                return "I'd love to give you personalized recommendations! 🎯\n\n" +
+                       "I noticed your profile interests aren't set up yet. Please:\n" +
+                       "1. Go to your Profile page\n" +
+                       "2. Click 'Edit Profile'\n" +
+                       "3. Add your interests (e.g., Artificial Intelligence, Web Development, Data Science)\n" +
+                       "4. Save your profile\n\n" +
+                       "Then come back and I'll suggest courses that perfectly match your learning goals! 🚀";
+            }
             
             // Build detailed prompt with actual user data
             StringBuilder prompt = new StringBuilder();
@@ -306,8 +323,7 @@ public class GeminiService {
             prompt.append("**User Profile:**\n");
             prompt.append("- Name: ").append(user.getFirstName()).append(" ").append(user.getLastName()).append("\n");
             prompt.append("- Experience Level: ").append(experienceLevel != null ? experienceLevel : "Not specified").append("\n");
-            prompt.append("- Interests: ").append(userInterests != null && !userInterests.isEmpty() ? 
-                String.join(", ", userInterests) : "Not specified").append("\n\n");
+            prompt.append("- Interests: ").append(String.join(", ", userInterests)).append("\n\n");
             
             prompt.append("**User Request:** \"").append(userMessage).append("\"\n\n");
             
