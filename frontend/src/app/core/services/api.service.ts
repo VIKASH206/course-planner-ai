@@ -2656,6 +2656,36 @@ How can I help you with your learning today?`,
     return this.http.post<ApiResponse<any>>(`${environment.apiUrl}/ai/chat`, requestBody).pipe(
       map((response: ApiResponse<any>) => {
         console.log('✅ Backend AI Response:', response);
+        
+        // Check if backend returned generic "set up profile" message - use frontend fallback instead
+        const backendMessage = response.data?.message || '';
+        const isGenericMessage = backendMessage.includes('profile interests are set up') || 
+                                  backendMessage.includes('profile interests aren\'t set up') ||
+                                  backendMessage.includes('Please make sure your profile');
+        
+        if (isGenericMessage) {
+          console.log('⚠️ Backend returned generic message, trying localStorage interests...');
+          const localInterests = this.detectInterestsFromMessage(requestBody.message);
+          
+          if (localInterests.length > 0) {
+            console.log('✅ Found local interests:', localInterests);
+            const responses = this.getResponseTemplates(localInterests);
+            return {
+              data: {
+                response: responses['course_recommendation'] || responses['general_help'],
+                isProjectRelated: true,
+                showMeetAdmin: false,
+                timestamp: new Date(),
+                conversationId: 'ai_' + Date.now(),
+                messageId: 'msg_' + Date.now(),
+                isAIGenerated: true
+              },
+              message: 'Response generated from local interests',
+              status: 'success' as const
+            };
+          }
+        }
+        
         return {
           data: {
             response: response.data.message,
@@ -2810,15 +2840,37 @@ How can I help you with your learning today?`,
     const lowerMessage = message.toLowerCase();
     const detectedInterests: string[] = [];
 
-    // First try to get from localStorage as backup
+    // First try to get from localStorage as backup - try multiple keys
     try {
+      // Try course-planner-user key first (main auth key)
+      const coursePlannerUser = localStorage.getItem('course-planner-user');
+      if (coursePlannerUser) {
+        const user = JSON.parse(coursePlannerUser);
+        const storedInterests = user?.profile?.interests || user?.interests || [];
+        if (storedInterests.length > 0) {
+          console.log('📦 Found interests in course-planner-user:', storedInterests);
+          return storedInterests;
+        }
+      }
+      
+      // Try currentUser key as fallback
       const currentUser = localStorage.getItem('currentUser');
       if (currentUser) {
         const user = JSON.parse(currentUser);
         const storedInterests = user?.profile?.interests || user?.interests || [];
         if (storedInterests.length > 0) {
-          console.log('📦 Found interests in localStorage:', storedInterests);
+          console.log('📦 Found interests in currentUser:', storedInterests);
           return storedInterests;
+        }
+      }
+      
+      // Try user_interests key directly
+      const userInterests = localStorage.getItem('user_interests');
+      if (userInterests) {
+        const interests = JSON.parse(userInterests);
+        if (interests.length > 0) {
+          console.log('📦 Found interests in user_interests:', interests);
+          return interests;
         }
       }
     } catch (e) {
