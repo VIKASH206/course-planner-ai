@@ -2686,31 +2686,13 @@ How can I help you with your learning today?`,
         
         if (isGenericMessage) {
           console.log('⚠️ Backend returned generic message:', backendMessage);
-          console.log('🔄 Using frontend fallback with localStorage interests...');
+          console.log('🔄 Prompting user to set up profile interests...');
           
-          // Get interests from localStorage directly
-          let localInterests: string[] = [];
-          try {
-            const storedUser = localStorage.getItem('course-planner-user');
-            if (storedUser) {
-              const user = JSON.parse(storedUser);
-              localInterests = user?.interests || user?.profile?.interests || [];
-              console.log('📦 Found interests in localStorage:', localInterests);
-            }
-          } catch(e) {
-            console.log('Error reading localStorage');
-          }
-          
-          // If still no interests, use default Web Development
-          if (localInterests.length === 0) {
-            console.log('⚠️ No interests in localStorage, using default Web Development');
-            localInterests = ['Web Development'];
-          }
-          
-          const responses = this.getResponseTemplates(localInterests);
+          // Simply return the backend's message asking user to set up profile
+          // NO fallback recommendations with dummy data
           return {
             data: {
-              response: responses['course_recommendation'] || responses['general_help'],
+              response: backendMessage,
               isProjectRelated: true,
               showMeetAdmin: false,
               timestamp: new Date(),
@@ -2718,7 +2700,7 @@ How can I help you with your learning today?`,
               messageId: 'msg_' + Date.now(),
               isAIGenerated: true
             },
-            message: 'Response generated from local interests',
+            message: 'User needs to set up profile interests',
             status: 'success' as const
           };
         }
@@ -2778,858 +2760,73 @@ How can I help you with your learning today?`,
    * Get intelligent response based on detected intent
    */
   private getIntentBasedResponse(message: string, intent: string, userId?: string): Observable<ApiResponse<any>> {
-    // For course recommendations, try to personalize
+    // When backend fails, return a simple message asking user to try again or set up profile
+    // NO hardcoded course recommendations
+    console.log('⚠️ Backend API unavailable, returning fallback message');
+    
+    let fallbackMessage = '';
+    
     if (intent === 'course_recommendation') {
-      console.log('🎯 Generating course recommendations...');
-      console.log('📝 User ID:', userId);
-      
-      // Strategy 1: Try to get user profile if userId is available
-      if (userId) {
-        console.log('📡 Fetching user profile from backend...');
-        return this.getUserProfile(userId).pipe(
-          map(profileResponse => {
-            console.log('✅ Profile Response:', profileResponse);
-            const userInterests = profileResponse?.data?.interests || profileResponse?.interests || [];
-            console.log('📊 User Profile Interests:', userInterests);
-            
-            // If no interests in profile, try detecting from localStorage or message
-            const finalInterests = userInterests.length > 0 
-              ? userInterests 
-              : this.detectInterestsFromMessage(message);
-            
-            const responses = this.getResponseTemplates(finalInterests);
-            
-            return {
-              data: {
-                response: responses[intent] || responses['general_help'],
-                conversationId: 'local_' + Date.now(),
-                messageId: 'msg_' + Date.now(),
-                timestamp: new Date(),
-                isAIGenerated: true,
-                isProjectRelated: true
-              },
-              message: 'AI response generated with user profile',
-              status: 'success' as const
-            };
-          }),
-          catchError(error => {
-            console.error('❌ Error fetching user profile:', error);
-            // Fallback: detect interest from message context or localStorage
-            const detectedInterests = this.detectInterestsFromMessage(message);
-            console.log('🔄 Using fallback interests:', detectedInterests);
-            const responses = this.getResponseTemplates(detectedInterests);
-            return of({
-              data: {
-                response: responses[intent] || responses['general_help'],
-                conversationId: 'local_' + Date.now(),
-                messageId: 'msg_' + Date.now(),
-                timestamp: new Date(),
-                isAIGenerated: true,
-                isProjectRelated: true
-              },
-              message: 'AI response generated from message context',
-              status: 'success' as const
-            });
-          }),
-          delay(1500)
-        );
-      } else {
-        // No userId - try localStorage first, then detect from message
-        console.log('⚠️ No userId provided, using localStorage and message detection');
-        const detectedInterests = this.detectInterestsFromMessage(message);
-        console.log('🔍 Final detected interests:', detectedInterests);
-        const responses = this.getResponseTemplates(detectedInterests);
-        return of({
-          data: {
-            response: responses[intent] || responses['general_help'],
-            conversationId: 'local_' + Date.now(),
-            messageId: 'msg_' + Date.now(),
-            timestamp: new Date(),
-            isAIGenerated: true,
-            isProjectRelated: true
-          },
-          message: 'AI response generated from message context',
-          status: 'success' as const
-        }).pipe(delay(1500));
-      }
+      fallbackMessage = `🎯 **I'd love to recommend courses for you!**
+
+To get personalized recommendations:
+
+1. **Make sure you're logged in**
+2. **Set up your profile interests:**
+   - Go to Profile → Edit Profile
+   - Add your interests (e.g., Artificial Intelligence, Web Development, Data Science)
+   - Save your profile
+
+3. **Come back and ask again!**
+
+If you're already logged in with interests set, please try again in a moment as our AI service is temporarily unavailable.
+
+You can also browse all available courses in the Courses section! 📚`;
+    } else {
+      fallbackMessage = `I'm here to help with your course planning and learning! 
+
+I can assist you with:
+• 📚 Course recommendations (based on your interests)
+• 📅 Study planning and scheduling
+• 📊 Progress tracking and insights
+• 🎯 Learning tips and guidance
+
+Please make sure you're logged in and your profile is set up for personalized recommendations.
+
+You can also browse courses directly from the Courses page!`;
     }
 
-    // For other intents, use default responses
-    const responses = this.getResponseTemplates([]);
     return of({
       data: {
-        response: responses[intent] || responses['general_help'],
+        response: fallbackMessage,
         conversationId: 'local_' + Date.now(),
         messageId: 'msg_' + Date.now(),
         timestamp: new Date(),
         isAIGenerated: true,
         isProjectRelated: true
       },
-      message: 'AI response generated',
+      message: 'Fallback response - backend unavailable',
       status: 'success' as const
-    }).pipe(delay(1500));
+    }).pipe(delay(1000));
   }
 
-  /**
-   * Detect interests from user message when profile is not available
-   */
+  // ============================================================================
+  // REMOVED: Unused hardcoded template functions
+  // These functions contained dummy course data that conflicted with backend
+  // Keeping commented for reference only - DO NOT USE
+  // ============================================================================
+  
+  /*
   private detectInterestsFromMessage(message: string): string[] {
-    const lowerMessage = message.toLowerCase();
-    const detectedInterests: string[] = [];
-
-    // First try to get from localStorage as backup - try multiple keys
-    try {
-      // Try course-planner-user key first (main auth key)
-      const coursePlannerUser = localStorage.getItem('course-planner-user');
-      if (coursePlannerUser) {
-        const user = JSON.parse(coursePlannerUser);
-        const storedInterests = user?.profile?.interests || user?.interests || [];
-        if (storedInterests.length > 0) {
-          console.log('📦 Found interests in course-planner-user:', storedInterests);
-          return storedInterests;
-        }
-      }
-      
-      // Try currentUser key as fallback
-      const currentUser = localStorage.getItem('currentUser');
-      if (currentUser) {
-        const user = JSON.parse(currentUser);
-        const storedInterests = user?.profile?.interests || user?.interests || [];
-        if (storedInterests.length > 0) {
-          console.log('📦 Found interests in currentUser:', storedInterests);
-          return storedInterests;
-        }
-      }
-      
-      // Try user_interests key directly
-      const userInterests = localStorage.getItem('user_interests');
-      if (userInterests) {
-        const interests = JSON.parse(userInterests);
-        if (interests.length > 0) {
-          console.log('📦 Found interests in user_interests:', interests);
-          return interests;
-        }
-      }
-    } catch (e) {
-      console.log('No interests found in localStorage');
-    }
-
-    // Check for AI/ML related keywords
-    if (lowerMessage.includes('ai') || 
-        lowerMessage.includes('artificial intelligence') ||
-        lowerMessage.includes('machine learning') ||
-        lowerMessage.includes('deep learning') ||
-        lowerMessage.includes('neural network') ||
-        lowerMessage.includes('data science')) {
-      detectedInterests.push('Artificial Intelligence');
-    }
-
-    // Check for web development keywords
-    if (lowerMessage.includes('web') ||
-        lowerMessage.includes('javascript') ||
-        lowerMessage.includes('react') ||
-        lowerMessage.includes('frontend') ||
-        lowerMessage.includes('backend')) {
-      detectedInterests.push('Web Development');
-    }
-
-    console.log('🔍 Detected interests from message:', detectedInterests);
-    return detectedInterests;
+    // This function is no longer used - backend handles interest detection
   }
-
-  /**
-   * Generate response templates based on user interests
-   */
+  
   private getResponseTemplates(userInterests: string[]): { [key: string]: string } {
-    console.log('🎯 Generating templates for interests:', userInterests);
-    
-    // Get the actual interest string for display
-    const interestDisplay = userInterests.length > 0 ? userInterests.join(', ') : 'Not specified';
-    
-    // Determine primary interest - check each interest individually
-    const hasAIInterest = userInterests.some(interest => {
-      const lowerInterest = interest.toLowerCase();
-      return lowerInterest.includes('artificial intelligence') ||
-             lowerInterest.includes('ai') ||
-             lowerInterest.includes('machine learning') ||
-             lowerInterest.includes('deep learning') ||
-             lowerInterest.includes('data science') ||
-             lowerInterest.includes('neural') ||
-             lowerInterest.includes('nlp');
-    });
-
-    const hasWebDevInterest = userInterests.some(interest => {
-      const lowerInterest = interest.toLowerCase();
-      return lowerInterest.includes('web development') ||
-             lowerInterest.includes('web dev') ||
-             lowerInterest.includes('javascript') ||
-             lowerInterest.includes('frontend') ||
-             lowerInterest.includes('front-end') ||
-             lowerInterest.includes('react') ||
-             lowerInterest.includes('angular') ||
-             lowerInterest.includes('vue');
-    });
-    
-    const hasDataScienceInterest = userInterests.some(interest => {
-      const lowerInterest = interest.toLowerCase();
-      return lowerInterest.includes('data science') ||
-             lowerInterest.includes('data analytics') ||
-             lowerInterest.includes('big data') ||
-             lowerInterest.includes('statistics');
-    });
-    
-    const hasMobileInterest = userInterests.some(interest => {
-      const lowerInterest = interest.toLowerCase();
-      return lowerInterest.includes('mobile') ||
-             lowerInterest.includes('android') ||
-             lowerInterest.includes('ios') ||
-             lowerInterest.includes('flutter') ||
-             lowerInterest.includes('react native');
-    });
-
-    console.log('✅ Interest Analysis:');
-    console.log('   - AI Interest:', hasAIInterest);
-    console.log('   - Web Dev Interest:', hasWebDevInterest);
-    console.log('   - Data Science Interest:', hasDataScienceInterest);
-    console.log('   - Mobile Interest:', hasMobileInterest);
-
-    // Generate personalized recommendation based on user's primary interest
-    let recommendationResponse = '';
-    
-    if (hasAIInterest) {
-      // AI/ML focused recommendations
-      recommendationResponse = `💡 **Personalized Course Recommendations for ${interestDisplay}**
-
-Based on your interest in **${interestDisplay}**, here are my top recommendations:
-
-**🎯 HIGHLY RECOMMENDED FOR YOU:**
-
-**1. Intermediate Artificial Intelligence** ⭐ Best Match
-   • Why: Perfect match for your AI interest
-   • Career Impact: +60% salary potential in AI roles
-   • Job Demand: Extremely High (Growing 35% annually)
-   • Duration: 10 weeks
-   • **Start This Week!**
-
-**2. Deep Learning & Neural Networks** 🔥
-   • Why: Essential for modern AI applications
-   • Topics: CNNs, RNNs, Transformers, GANs
-   • Duration: 12 weeks
-   • Perfect for: Building intelligent systems
-
-**3. Natural Language Processing (NLP)** 🗣️
-   • Why: ChatGPT, AI assistants are the future
-   • Topics: Text processing, sentiment analysis, chatbots
-   • Duration: 8 weeks
-   • Recommended: High-demand AI specialization
-
-**4. Computer Vision with Python** 👁️
-   • Why: Image/video AI is booming
-   • Topics: Object detection, face recognition, autonomous systems
-   • Duration: 10 weeks
-   • Great for: Building real-world AI projects
-
-**📊 Personalization Based On:**
-• Your interests: ${interestDisplay}
-• Career goal: AI/ML Engineer
-• Industry trend: AI jobs increased 74% in 5 years
-
-**🎓 Recommended Learning Path:**
-1. Start with Intermediate AI ➡️ Foundation
-2. Progress to Deep Learning ➡️ 3 months
-3. Specialize in NLP or Computer Vision ➡️ 6 months
-
-Would you like to enroll in any of these courses? 📅`;
-    } else if (hasDataScienceInterest) {
-      // Data Science focused recommendations
-      recommendationResponse = `💡 **Personalized Course Recommendations for ${interestDisplay}**
-
-Based on your interest in **${interestDisplay}**, here are my top recommendations:
-
-**🎯 HIGHLY RECOMMENDED FOR YOU:**
-
-**1. Python for Data Science** ⭐ Best Match
-   • Why: Foundation of all data science work
-   • Career Impact: +55% salary potential
-   • Job Demand: Very High
-   • Duration: 8 weeks
-   • **Start This Week!**
-
-**2. Machine Learning for Data Analysis** 📊
-   • Why: Extract insights from data
-   • Topics: Regression, classification, clustering
-   • Duration: 10 weeks
-   • Perfect for: Making data-driven decisions
-
-**3. Data Visualization & Storytelling** 📈
-   • Why: Communicate findings effectively
-   • Topics: Tableau, Power BI, matplotlib, seaborn
-   • Duration: 6 weeks
-   • Recommended: Essential for presentations
-
-**📊 Personalization Based On:**
-• Your interests: ${interestDisplay}
-• Career goal: Data Scientist/Analyst
-• Industry trend: Data roles growing 28% annually
-
-Would you like to enroll in any of these courses? 📅`;
-    } else if (hasMobileInterest) {
-      // Mobile Development focused recommendations
-      recommendationResponse = `💡 **Personalized Course Recommendations for ${interestDisplay}**
-
-Based on your interest in **${interestDisplay}**, here are my top recommendations:
-
-**🎯 HIGHLY RECOMMENDED FOR YOU:**
-
-**1. React Native - Cross Platform Apps** ⭐ Best Match
-   • Why: Build iOS & Android with one codebase
-   • Career Impact: +40% salary potential
-   • Job Demand: Very High
-   • Duration: 10 weeks
-   • **Start This Week!**
-
-**2. Flutter & Dart Development** 📱
-   • Why: Google's modern mobile framework
-   • Topics: Widgets, state management, animations
-   • Duration: 8 weeks
-   • Perfect for: Beautiful, fast apps
-
-**3. Native iOS Development (Swift)** 🍎
-   • Why: Premium app market
-   • Topics: SwiftUI, UIKit, App Store deployment
-   • Duration: 12 weeks
-   • Recommended: High-paying iOS jobs
-
-**📊 Personalization Based On:**
-• Your interests: ${interestDisplay}
-• Career goal: Mobile App Developer
-• Industry trend: Mobile apps market $935B by 2027
-
-Would you like to enroll in any of these courses? 📅`;
-    } else if (hasWebDevInterest) {
-      // Web development focused recommendations
-      recommendationResponse = `💡 **Personalized Course Recommendations for ${interestDisplay}**
-
-Based on your interest in **${interestDisplay}**, here are my top recommendations:
-
-**🎯 HIGHLY RECOMMENDED FOR YOU:**
-
-**1. Advanced JavaScript & TypeScript** ⭐ Best Match
-   • Why: Builds on your JS knowledge
-   • Career Impact: +45% salary potential
-   • Job Demand: Very High
-   • Duration: 8 weeks
-   • **Start This Week!**
-
-**2. React Advanced Patterns** 🔥
-   • Why: Master modern frontend
-   • Topics: Hooks, context, performance optimization
-   • Duration: 6 weeks
-   • Perfect for: Building scalable apps
-
-**3. Node.js Backend Development** 🏗️
-   • Why: Full-stack capability
-   • Topics: Express, APIs, databases, authentication
-   • Duration: 10 weeks
-   • Recommended: Complete your full-stack journey
-
-**📊 Personalization Based On:**
-• Your interests: ${interestDisplay}
-• Career goal: Full-Stack Developer
-• Industry trend: Web dev jobs remain stable
-
-Would you like to enroll in any of these courses? 📅`;
-    } else {
-      // No specific interest detected - prompt user to set interests
-      recommendationResponse = `💡 **Let's Personalize Your Recommendations!**
-
-I'd love to give you the best course recommendations, but I need to know more about your interests first!
-
-**🎯 Tell me what you're interested in:**
-
-**Popular Learning Paths:**
-• 🤖 Artificial Intelligence & Machine Learning
-• 💻 Web Development (Frontend/Backend)
-• 📊 Data Science & Analytics
-• 📱 Mobile App Development
-• ☁️ Cloud Computing & DevOps
-• 🎨 UI/UX Design
-
-**Or you can:**
-1. Update your profile interests in Settings
-2. Tell me directly: "I'm interested in [topic]"
-3. Browse all available courses
-
-Which area interests you the most? 🚀`;
-    }
-
-    return {
-      'course_search': `🔍 **Available Courses Found!**
-
-I can help you find the perfect courses! Here's what I found:
-
-**🌟 Popular Courses:**
-
-**1. Full-Stack Web Development** 🚀
-   • Duration: 12 weeks
-   • Level: Beginner to Advanced
-   • Topics: HTML, CSS, JavaScript, React, Node.js
-   • 4.8★ (1,240 students)
-
-**2. Python for Data Science** 📊
-   • Duration: 10 weeks
-   • Level: Intermediate
-   • Topics: NumPy, Pandas, Matplotlib, Machine Learning
-   • 4.9★ (2,150 students)
-
-**3. Mobile App Development** 📱
-   • Duration: 8 weeks
-   • Level: Intermediate
-   • Topics: React Native, iOS, Android
-   • 4.7★ (890 students)
-
-**4. AI & Machine Learning** 🤖
-   • Duration: 14 weeks
-   • Level: Advanced
-   • Topics: Neural Networks, Deep Learning, TensorFlow
-   • 4.9★ (1,680 students)
-
-**💡 Quick Filters:**
-• Browse by Category: Programming, Data Science, Design, Business
-• Filter by Level: Beginner, Intermediate, Advanced
-• Sort by: Popularity, Rating, Duration
-
-Want me to recommend specific courses based on your interests? Just let me know what you're looking for! 🎯`,
-
-      'course_recommendation': recommendationResponse,
-
-      'plan_create': `📅 **Creating Your Personalized Study Plan**
-
-Let me create an optimized learning schedule for you!
-
-**🎯 YOUR CUSTOM 4-WEEK STUDY PLAN:**
-
-**📚 WEEK 1: Foundation Strengthening**
-**Monday-Wednesday:**
-• 9:00-10:30 AM: React Advanced Concepts
-• 11:00-12:00 PM: Coding practice
-• 7:00-8:30 PM: Project work
-
-**Thursday-Friday:**
-• Morning: Review & consolidation
-• Evening: Build mini-project
-
-**Weekend:** Complete Week 1 assignment
-
-**📊 WEEK 2: Practical Application**
-• **Daily Focus:** 2 hours theory + 2 hours practice
-• **Project:** E-commerce app (shopping cart feature)
-• **Goal:** Deploy working prototype
-
-**🚀 WEEK 3: Advanced Topics**
-• **New Concepts:** State management, testing
-• **Practice:** Code challenges daily
-• **Milestone:** Pass mid-course assessment
-
-**🎯 WEEK 4: Project & Review**
-• **Major Project:** Complete full-stack application
-• **Review Sessions:** Daily concept revision
-• **Final:** Course completion exam
-
-**⏰ Daily Schedule Template:**
-• **Peak Hours (10-12 AM):** Hard concepts
-• **Afternoon (2-4 PM):** Practice problems
-• **Evening (7-9 PM):** Projects & review
-
-**🎮 Motivation System:**
-• Complete daily goals → Earn badges
-• Weekly targets → Unlock bonuses
-• Course completion → Certificate
-
-**📈 Success Metrics:**
-• Study: 10-12 hours/week
-• Practice: 50+ coding challenges
-• Projects: 3 completed applications
-
-Ready to start? I'll send you reminders and track your progress! 🚀`,
-
-      'plan_update': `🔄 **Updating Your Study Schedule**
-
-No worries! Let me help you reschedule and get back on track.
-
-**📊 Current Status Analysis:**
-• Missed: Yesterday's React lesson
-• Pending: 2 assignments
-• Upcoming: Team presentation (Friday)
-
-**✅ RESCHEDULED PLAN:**
-
-**🚨 TODAY (Catch-Up Priority):**
-• 2:00-3:30 PM: Complete missed React lesson
-• 4:00-5:00 PM: Assignment #1 (Quick win)
-• 8:00-9:00 PM: Review & notes
-
-**📅 REST OF THIS WEEK:**
-
-**Wednesday:**
-• Morning: Assignment #2
-• Evening: Presentation prep
-
-**Thursday:**
-• Team meeting & practice presentation
-• Light review (no new material)
-
-**Friday:**
-• Presentation day 🎤
-• Celebrate completion! 🎉
-
-**💡 Smart Adjustments Made:**
-• Moved complex topics to next week
-• Added buffer time for assignments
-• Reduced daily load (2.5 hrs → 2 hrs)
-• Prioritized urgent deadlines
-
-**🎯 Modified Weekly Goals:**
-• Complete 2 assignments ✓
-• Catch up on missed content ✓
-• Deliver presentation ✓
-• Maintain momentum ✓
-
-**⚡ Pro Tips:**
-• Focus on one task at a time
-• Take 10-min breaks every hour
-• Ask for help if stuck >30 mins
-• Track daily progress
-
-You've got this! The key is consistency, not perfection. Let's get you back on track! 💪`,
-
-      'progress_check': `📊 **Your Learning Progress Report**
-
-Great question! Let's see how you're doing:
-
-**🎯 OVERALL PERFORMANCE:**
-• **Total Progress:** 68% Complete
-• **Study Streak:** 14 days 🔥
-• **Time Invested:** 42.5 hours
-• **Rank:** Top 25% of learners
-
-**📚 COURSE-WISE BREAKDOWN:**
-
-**React Development** ✅
-• Progress: 85% (Nearly done!)
-• Quiz Scores: 88% average
-• Assignments: 7/8 completed
-• Status: On track for completion
-
-**JavaScript Advanced** 🔄
-• Progress: 67% (Doing great!)
-• Quiz Scores: 82% average
-• Assignments: 5/8 completed
-• Status: Slightly behind schedule
-
-**Data Structures** ⚠️
-• Progress: 45% (Needs attention)
-• Quiz Scores: 71% average
-• Assignments: 3/8 completed
-• Status: Behind schedule
-
-**📈 WEEKLY TRENDS:**
-• Week 1: 8 hours study time
-• Week 2: 11 hours (+37% improvement)
-• Week 3: 13 hours (+18% improvement)
-• Week 4: 10.5 hours (slight dip)
-
-**🎯 COMPLETED MILESTONES:**
-✅ Completed React basics
-✅ Built 3 projects
-✅ Passed 12 quizzes
-✅ Helped 4 classmates
-✅ Maintained 2-week streak
-
-**⏰ UPCOMING DEADLINES:**
-• React final project: 3 days
-• JS assignment: 5 days
-• Data Structures quiz: 1 week
-
-**💡 RECOMMENDATIONS:**
-1. **Focus on Data Structures** (weakest area)
-2. **Complete React** (so close!)
-3. **Maintain study streak** (you're doing great!)
-
-Want detailed breakdown of any specific course? 📖`,
-
-      'quiz_help': `🎯 **Quiz & Practice Tests**
-
-Let me generate a custom quiz for you!
-
-**📝 QUICK QUIZ: React Hooks**
-
-**Question 1:** What is the purpose of useEffect hook?
-A) Manage state
-B) Handle side effects
-C) Create refs
-D) Optimize performance
-
-**Question 2:** Which hook would you use for complex state logic?
-A) useState
-B) useEffect
-C) useReducer
-D) useMemo
-
-**Question 3:** When does cleanup function in useEffect run?
-A) Before component mounts
-B) Before component unmounts
-C) After every render
-D) Only once
-
-**Question 4:** What's the dependency array in useEffect?
-A) Optional parameter
-B) Required parameter
-C) Controls when effect runs
-D) Both A and C
-
-**Question 5 (Code Challenge):**
-Fix this code:
-\`\`\`javascript
-function Counter() {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    setCount(count + 1);
-  });
-  return <div>{count}</div>;
-}
-\`\`\`
-
-**💡 ANSWERS:**
-1. B - Handle side effects
-2. C - useReducer for complex state
-3. B - Before unmount
-4. D - Both optional and controls execution
-5. Missing dependency array causes infinite loop
-
-**📊 DIFFICULTY LEVELS AVAILABLE:**
-• Beginner: Basic concepts
-• Intermediate: Practical scenarios
-• Advanced: Complex problems
-
-**🎮 QUIZ TYPES:**
-• Multiple Choice (like above)
-• True/False
-• Code Challenges
-• Fill in the blanks
-
-Want more quizzes or different difficulty level? 🚀`,
-
-      'feedback': `📈 **Performance Feedback & Improvement Tips**
-
-Excellent work so far! Here's your detailed performance analysis:
-
-**🌟 STRENGTHS (Keep it up!):**
-• **JavaScript:** 89% mastery
-  - Strong in ES6+ features
-  - Excellent async programming
-  - Clean code practices
-
-• **Problem Solving:** Above average
-  - 78% challenge completion rate
-  - Good debugging skills
-  - Creative solutions
-
-• **Consistency:** Outstanding
-  - 14-day study streak
-  - Regular practice
-  - Good time management
-
-**⚠️ AREAS FOR IMPROVEMENT:**
-
-**1. Data Structures** (Current: 67%)
-**What's holding you back:**
-• Tree algorithms: 45% accuracy
-• Time complexity: 58% understanding
-• Hash tables: 62% proficiency
-
-**How to improve:**
-• Daily: 30 mins visual practice
-• Weekly: Complete 10 problems
-• Resources: Interactive tree visualizer
-• **Target:** 80% in 3 weeks
-
-**2. System Design** (Current: 71%)
-**Focus areas:**
-• Scalability concepts
-• Database optimization
-• API design patterns
-
-**Action plan:**
-• Read: 2 case studies/week
-• Practice: Design 1 system/week
-• Review: Real-world architectures
-
-**🎯 PERSONALIZED RECOMMENDATIONS:**
-
-**Short-term (This Week):**
-1. Complete React course (you're 85% done!)
-2. Practice 5 tree problems daily
-3. Review weak quiz questions
-
-**Mid-term (This Month):**
-1. Master data structures fundamentals
-2. Build 2 full projects
-3. Improve quiz average to 85%
-
-**Long-term (3 Months):**
-1. Advanced algorithms mastery
-2. System design proficiency
-3. Open source contributions
-
-**💪 MOTIVATION:**
-You've improved 23% in the last month! Your consistency is your superpower. Keep the momentum going!
-
-**📊 Predicted Performance:**
-If you maintain current pace + focus on weak areas:
-• Month 1: 75% overall
-• Month 2: 85% overall  
-• Month 3: 90%+ (Top 10%)
-
-Need specific help with any topic? I'm here! 🚀`,
-
-      'motivation': `⭐ **Your Daily Motivation Boost!**
-
-**✨ INSPIRING QUOTE:**
-*"The beautiful thing about learning is that nobody can take it away from you."*
-— B.B. King
-
-**🎉 CELEBRATING YOUR WINS:**
-
-**🏆 What You've Accomplished:**
-• 14-day study streak (Only 8% of students achieve this!)
-• 85% progress in React (Almost there!)
-• Helped 4 fellow students
-• Maintained 89% quiz average
-• Invested 42+ hours in learning
-
-**💪 YOU'RE STRONGER THAN YOU THINK:**
-
-**Last Month You Were:**
-• Struggling with React basics
-• Unsure about career path
-• Studying inconsistently
-
-**Now You Are:**
-• Building real projects confidently
-• Clear learning goals
-• Consistent daily learner
-• Top 25% of your cohort
-
-**That's MASSIVE progress!** 🚀
-
-**🔥 MOMENTUM INDICATORS:**
-• Study time: +67% increase
-• Quiz scores: +23% improvement
-• Project quality: 4.2/5 stars
-• Peer reviews: Excellent feedback
-
-**🌟 WHY YOU'LL SUCCEED:**
-
-**1. You Took Action**
-Most people just think about learning. You actually started!
-
-**2. You're Consistent**
-14 days straight proves you're serious. That's the #1 success factor.
-
-**3. You Ask Questions**
-Seeking motivation = self-awareness = growth mindset
-
-**4. You Help Others**
-Teaching others = deeper understanding
-
-**💡 POWER AFFIRMATIONS:**
-🎯 "I am capable of mastering any concept"
-🔥 "Every challenge makes me stronger"
-✨ "My effort is compounding daily"
-🚀 "I belong among top performers"
-
-**🎮 TODAY'S CHALLENGE:**
-Complete ONE thing that scares you:
-• That difficult problem you've been avoiding
-• Asking for help in forum
-• Starting that big project
-• Taking that advanced quiz
-
-**🌈 VISION FOR YOUR FUTURE:**
-
-**6 Months from now:**
-• Confidently solving complex problems
-• Leading team projects
-• Getting job offers
-• Inspiring beginners
-
-**The developer you're becoming is worth every late night, every debugging session, every moment of doubt!**
-
-**Remember:** Every expert was once a beginner who refused to give up.
-
-You've got this! Ready to make today another productive day? 💻✨`,
-
-      'general_help': `❓ **How Can I Help You?**
-
-Welcome! I'm your AI Study Assistant for the Course Planner System.
-
-**🎯 I can help you with:**
-
-**📚 COURSES:**
-• "Show me available courses"
-• "Recommend courses based on my interests"
-• "What's the best learning path for web development?"
-
-**📅 PLANNING:**
-• "Create a study schedule for me"
-• "I missed yesterday's lesson, reschedule my plan"
-• "How to balance multiple courses?"
-
-**📊 PROGRESS:**
-• "Show my learning progress"
-• "Which subject am I weakest in?"
-• "How much time did I spend studying?"
-
-**🎯 PRACTICE:**
-• "Generate a quiz on React"
-• "Give me coding challenges"
-• "Explain this concept in simple terms"
-
-**💪 MOTIVATION:**
-• "I need motivation to study"
-• "Show my achievements and badges"
-• "Who's leading the leaderboard?"
-
-**👥 COLLABORATION:**
-• "Create a study group"
-• "Show my group tasks"
-• "Find study partners"
-
-**⚙️ PLATFORM HELP:**
-• "How to enroll in a course?"
-• "How to reset my password?"
-• "What devices are supported?"
-
-**🔥 POPULAR QUESTIONS:**
-1. "What should I study next?"
-2. "Create a learning plan"
-3. "Check my progress"
-4. "Give me a quiz"
-5. "Recommend courses"
-
-**💡 PRO TIP:**
-Just ask naturally! I understand context and can help with specific or general questions.
-
-**Example Queries:**
-• "I'm interested in AI, what should I learn?"
-• "Help me prepare for my exam next week"
-• "Show me courses for beginners"
-• "I'm falling behind, what should I do?"
-
-What would you like to explore today? 🚀`
-    };
+    // This function contained hardcoded JavaScript/React/TypeScript courses
+    // Removed to prevent dummy data from appearing in recommendations
+    // All recommendations now come from backend AI only
   }
+  */
 
   // Helper method to determine if question is project-related
   private isProjectRelatedQuestion(message: string): boolean {
