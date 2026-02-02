@@ -3437,22 +3437,7 @@ Just ask naturally! I understand context and can help with specific or general q
 What would you like to explore today? 🚀`
     };
 
-    const response = responses[intent] || responses['general_help'];
-
-    return of({
-      data: {
-        response: response,
-        isProjectRelated: true,
-        showMeetAdmin: false,
-        timestamp: new Date(),
-        conversationId: 'intent_' + Date.now(),
-        messageId: 'msg_' + Date.now(),
-        isAIGenerated: true,
-        intent: intent
-      },
-      message: `Intent-based response: ${intent}`,
-      status: 'success' as const
-    }).pipe(delay(800 + Math.random() * 700)); // Random delay 800-1500ms for realistic feel
+    return responses;
   }
 
   // Helper method to determine if question is project-related
