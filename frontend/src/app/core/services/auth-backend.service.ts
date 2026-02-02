@@ -274,7 +274,22 @@ export class AuthService {
    * Get current user ID
    */
   getCurrentUserId(): string | null {
-    return this._currentUser()?.id || null;
+    // Try to get from current user signal first
+    const userId = this._currentUser()?.id;
+    if (userId) return userId;
+    
+    // Fallback to localStorage
+    try {
+      const userData = localStorage.getItem(this.USER_KEY);
+      if (userData) {
+        const user = JSON.parse(userData);
+        return user?.id || null;
+      }
+    } catch (e) {
+      console.error('Error getting user ID from localStorage:', e);
+    }
+    
+    return null;
   }
 
   /**

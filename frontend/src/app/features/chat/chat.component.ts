@@ -1050,9 +1050,21 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     console.log(`🧠 Detected Intent: ${detectedIntent}`);
     console.log(`📝 Contextual Prompt: ${contextualPrompt}`);
 
-    // Get actual logged-in user ID
-    const userId = this.authService.getCurrentUserId() || undefined;
-    console.log(`👤 User ID: ${userId}`);
+    // Get actual logged-in user ID with fallback
+    const userId = this.authService.getCurrentUserId() || localStorage.getItem('userId') || undefined;
+    console.log(`👤 User ID being sent to backend: ${userId}`);
+    
+    // Also log from localStorage directly for debugging
+    const storedUser = localStorage.getItem('course-planner-user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        console.log('📦 Stored user data:', parsed);
+        console.log('🆔 User ID from storage:', parsed?.id);
+      } catch(e) {
+        console.error('Error parsing stored user:', e);
+      }
+    }
 
     // Send to AI service with detected intent and context
     this.apiService.sendAIMessage(messageText, contextualPrompt, userId)
