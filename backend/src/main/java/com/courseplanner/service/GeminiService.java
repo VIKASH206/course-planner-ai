@@ -4,6 +4,9 @@ import com.courseplanner.dto.GeminiRequest;
 import com.courseplanner.dto.GeminiResponse;
 import com.courseplanner.model.Course;
 import com.courseplanner.model.Task;
+import com.courseplanner.model.User;
+import com.courseplanner.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,6 +24,9 @@ public class GeminiService {
     private String apiUrl;
 
     private final WebClient webClient;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     public GeminiService() {
         this.webClient = WebClient.builder()
@@ -272,5 +278,65 @@ public class GeminiService {
         }
         
         return "Sorry, I couldn't generate a response at this time. Please try again.";
+    }
+
+    /**
+     * Generate personalized course recommendation based on user interests and profile
+     */
+    public String generatePersonalizedCourseRecommendation(String userId, String userMessage) {
+        try {
+            // Fetch actual user data
+            User user = userRepository.findById(userId).orElse(null);
+            
+            if (user == null) {
+                return "Please log in to get personalized course recommendations!";
+            }
+
+            // Get user interests from profile
+            List<String> userInterests = user.getInterests();
+            String experienceLevel = user.getExperienceLevel();
+            
+            System.out.println("👤 User: " + user.getUsername());
+            System.out.println("🎯 Interests: " + userInterests);
+            System.out.println("📊 Experience Level: " + experienceLevel);
+            
+            // Build detailed prompt with actual user data
+            StringBuilder prompt = new StringBuilder();
+            prompt.append("You are an AI course recommendation assistant for a course planning platform.\n\n");
+            prompt.append("**User Profile:**\n");
+            prompt.append("- Name: ").append(user.getFirstName()).append(" ").append(user.getLastName()).append("\n");
+            prompt.append("- Experience Level: ").append(experienceLevel != null ? experienceLevel : "Not specified").append("\n");
+            prompt.append("- Interests: ").append(userInterests != null && !userInterests.isEmpty() ? 
+                String.join(", ", userInterests) : "Not specified").append("\n\n");
+            
+            prompt.append("**User Request:** \"").append(userMessage).append("\"\n\n");
+            
+            prompt.append("**Instructions:**\n");
+            prompt.append("1. Provide 3-4 personalized course recommendations that MATCH the user's interests\n");
+            prompt.append("2. If user interest is 'Artificial Intelligence', recommend AI/ML courses\n");
+            prompt.append("3. If user interest is 'Web Development', recommend web dev courses\n");
+            prompt.append("4. Match the difficulty level to their experience: ").append(experienceLevel).append("\n");
+            prompt.append("5. For each course, explain:\n");
+            prompt.append("   - Why it matches their interests\n");
+            prompt.append("   - Career impact\n");
+            prompt.append("   - Job demand\n");
+            prompt.append("   - Duration\n\n");
+            
+            prompt.append("Format your response in a friendly, engaging markdown style with emojis.\n");
+            prompt.append("Start with: '💡 **Personalized Course Recommendations**'\n\n");
+            prompt.append("IMPORTANT: Do NOT recommend JavaScript/TypeScript courses if user is interested in AI/ML!");
+            
+            System.out.println("📤 Sending prompt to Gemini API...");
+            String response = callGeminiAPI(prompt.toString());
+            System.out.println("✅ Received AI response");
+            
+            return response;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error generating personalized recommendation: " + e.getMessage());
+            e.printStackTrace();
+            return "I'd love to give you personalized recommendations! Please make sure your profile interests are set up in your profile settings, " +
+                   "and I'll suggest courses that perfectly match your learning goals. 🎯";
+        }
     }
 }

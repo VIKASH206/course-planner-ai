@@ -137,7 +137,25 @@ public class AIController {
                         .body(ApiResponse.error("Message is required for chat"));
             }
 
-            String response = geminiService.chatResponse(request.getMessage(), request.getContext());
+            // Check if this is a course recommendation request
+            String message = request.getMessage().toLowerCase();
+            boolean isRecommendationRequest = message.contains("recommend") || 
+                                             message.contains("suggest") || 
+                                             message.contains("course for me") ||
+                                             message.contains("what should i learn");
+
+            String response;
+            
+            if (isRecommendationRequest && request.getUserId() != null) {
+                // Generate personalized recommendations based on user interests
+                response = geminiService.generatePersonalizedCourseRecommendation(
+                    request.getUserId(), 
+                    request.getMessage()
+                );
+            } else {
+                // Regular chat response
+                response = geminiService.chatResponse(request.getMessage(), request.getContext());
+            }
             
             // Determine if this was classified as project-related or not
             boolean isProjectRelated = !response.contains("Meet Admin");

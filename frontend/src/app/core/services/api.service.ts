@@ -2707,13 +2707,24 @@ How can I help you with your learning today?`,
   private getIntentBasedResponse(message: string, intent: string, userId?: string): Observable<ApiResponse<any>> {
     // For course recommendations, try to personalize
     if (intent === 'course_recommendation') {
-      // First try to get user profile if userId is available
+      console.log('🎯 Generating course recommendations...');
+      console.log('📝 User ID:', userId);
+      
+      // Strategy 1: Try to get user profile if userId is available
       if (userId) {
+        console.log('📡 Fetching user profile from backend...');
         return this.getUserProfile(userId).pipe(
           map(profileResponse => {
+            console.log('✅ Profile Response:', profileResponse);
             const userInterests = profileResponse?.data?.interests || profileResponse?.interests || [];
             console.log('📊 User Profile Interests:', userInterests);
-            const responses = this.getResponseTemplates(userInterests);
+            
+            // If no interests in profile, try detecting from localStorage or message
+            const finalInterests = userInterests.length > 0 
+              ? userInterests 
+              : this.detectInterestsFromMessage(message);
+            
+            const responses = this.getResponseTemplates(finalInterests);
             
             return {
               data: {
@@ -2729,9 +2740,10 @@ How can I help you with your learning today?`,
             };
           }),
           catchError(error => {
-            console.error('Error fetching user profile, using message context:', error);
-            // Fallback: detect interest from message context
+            console.error('❌ Error fetching user profile:', error);
+            // Fallback: detect interest from message context or localStorage
             const detectedInterests = this.detectInterestsFromMessage(message);
+            console.log('🔄 Using fallback interests:', detectedInterests);
             const responses = this.getResponseTemplates(detectedInterests);
             return of({
               data: {
@@ -2749,9 +2761,10 @@ How can I help you with your learning today?`,
           delay(1500)
         );
       } else {
-        // No userId - detect from message
-        console.log('⚠️ No userId provided, detecting from message context');
+        // No userId - try localStorage first, then detect from message
+        console.log('⚠️ No userId provided, using localStorage and message detection');
         const detectedInterests = this.detectInterestsFromMessage(message);
+        console.log('🔍 Final detected interests:', detectedInterests);
         const responses = this.getResponseTemplates(detectedInterests);
         return of({
           data: {
@@ -2833,6 +2846,8 @@ How can I help you with your learning today?`,
    * Generate response templates based on user interests
    */
   private getResponseTemplates(userInterests: string[]): { [key: string]: string } {
+    console.log('🎯 Generating templates for interests:', userInterests);
+    
     // Determine primary interest
     const hasAIInterest = userInterests.some(interest => 
       interest.toLowerCase().includes('artificial intelligence') ||
@@ -2846,6 +2861,9 @@ How can I help you with your learning today?`,
       interest.toLowerCase().includes('javascript') ||
       interest.toLowerCase().includes('frontend')
     );
+
+    console.log('✅ Has AI Interest:', hasAIInterest);
+    console.log('✅ Has Web Dev Interest:', hasWebDevInterest);
 
     // Generate personalized recommendation based on user's primary interest
     let recommendationResponse = '';
@@ -2929,35 +2947,27 @@ Based on your learning history and goals, here are my top recommendations:
 
 Would you like to enroll in any of these courses? I can help you plan your schedule! 📅`;
     } else {
-      // Generic recommendations
-      recommendationResponse = `💡 **Personalized Course Recommendations**
+      // No specific interest detected - prompt user to set interests
+      recommendationResponse = `💡 **Let's Personalize Your Recommendations!**
 
-Based on your profile, here are my top recommendations:
+I'd love to give you the best course recommendations, but I need to know more about your interests first!
 
-**🎯 HIGHLY RECOMMENDED FOR YOU:**
+**🎯 Tell me what you're interested in:**
 
-**1. Introduction to Programming** ⭐ Best Match
-   • Why: Perfect starting point
-   • Career Impact: Foundation for tech career
-   • Job Demand: Very High
-   • Duration: 8 weeks
+**Popular Learning Paths:**
+• 🤖 Artificial Intelligence & Machine Learning
+• 💻 Web Development (Frontend/Backend)
+• 📊 Data Science & Analytics
+• 📱 Mobile App Development
+• ☁️ Cloud Computing & DevOps
+• 🎨 UI/UX Design
 
-**2. Data Science Fundamentals** 🔥
-   • Why: High demand skill
-   • Next Step: Analytics and insights
-   • Duration: 10 weeks
+**Or you can:**
+1. Update your profile interests in Settings
+2. Tell me directly: "I'm interested in [topic]"
+3. Browse all available courses
 
-**3. Web Development Basics** 🏗️
-   • Why: Build real-world applications
-   • Topics: HTML, CSS, JavaScript
-   • Duration: 8 weeks
-
-**📊 Personalization Based On:**
-• Your profile and interests
-• Current level: Beginner-Intermediate
-• Time available: 10-15 hours/week
-
-Would you like to enroll in any of these courses? I can help you plan your schedule! 📅`;
+Which area interests you the most? 🚀`;
     }
 
     return {
