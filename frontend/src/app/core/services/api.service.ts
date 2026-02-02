@@ -2651,22 +2651,28 @@ How can I help you with your learning today?`,
       userId: userId || 'anonymous'
     };
 
+    console.log('📤 Calling backend AI API with:', requestBody);
+
     return this.http.post<ApiResponse<any>>(`${environment.apiUrl}/ai/chat`, requestBody).pipe(
-      map((response: ApiResponse<any>) => ({
-        data: {
-          response: response.data.message,
-          isProjectRelated: response.data.isProjectRelated,
-          showMeetAdmin: response.data.showMeetAdmin,
-          timestamp: response.data.timestamp,
-          conversationId: 'ai_' + Date.now(),
-          messageId: 'msg_' + Date.now(),
-          isAIGenerated: true
-        },
-        message: response.message,
-        status: response.status
-      })),
+      map((response: ApiResponse<any>) => {
+        console.log('✅ Backend AI Response:', response);
+        return {
+          data: {
+            response: response.data.message,
+            isProjectRelated: response.data.isProjectRelated,
+            showMeetAdmin: response.data.showMeetAdmin,
+            timestamp: response.data.timestamp,
+            conversationId: 'ai_' + Date.now(),
+            messageId: 'msg_' + Date.now(),
+            isAIGenerated: true
+          },
+          message: response.message,
+          status: response.status
+        };
+      }),
       catchError(error => {
-        console.error('Backend AI API error, using intent-based fallback:', error);
+        console.error('❌ Backend AI API error:', error);
+        console.log('🔄 Falling back to intent-based response');
         // Use intent-based intelligent fallback responses
         return this.getIntentBasedResponse(message, intent, userId);
       }),
