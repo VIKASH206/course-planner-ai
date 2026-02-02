@@ -2657,33 +2657,52 @@ How can I help you with your learning today?`,
       map((response: ApiResponse<any>) => {
         console.log('✅ Backend AI Response:', response);
         
-        // Check if backend returned generic "set up profile" message - use frontend fallback instead
+        // Check if backend returned generic/error message - use frontend fallback instead
         const backendMessage = response.data?.message || '';
         const isGenericMessage = backendMessage.includes('profile interests are set up') || 
                                   backendMessage.includes('profile interests aren\'t set up') ||
-                                  backendMessage.includes('Please make sure your profile');
+                                  backendMessage.includes('Please make sure your profile') ||
+                                  backendMessage.includes('Please log in') ||
+                                  backendMessage.includes('personalized recommendations') ||
+                                  backendMessage.includes('I\'d love to give you');
         
         if (isGenericMessage) {
-          console.log('⚠️ Backend returned generic message, trying localStorage interests...');
-          const localInterests = this.detectInterestsFromMessage(requestBody.message);
+          console.log('⚠️ Backend returned generic message:', backendMessage);
+          console.log('🔄 Using frontend fallback with localStorage interests...');
           
-          if (localInterests.length > 0) {
-            console.log('✅ Found local interests:', localInterests);
-            const responses = this.getResponseTemplates(localInterests);
-            return {
-              data: {
-                response: responses['course_recommendation'] || responses['general_help'],
-                isProjectRelated: true,
-                showMeetAdmin: false,
-                timestamp: new Date(),
-                conversationId: 'ai_' + Date.now(),
-                messageId: 'msg_' + Date.now(),
-                isAIGenerated: true
-              },
-              message: 'Response generated from local interests',
-              status: 'success' as const
-            };
+          // Get interests from localStorage directly
+          let localInterests: string[] = [];
+          try {
+            const storedUser = localStorage.getItem('course-planner-user');
+            if (storedUser) {
+              const user = JSON.parse(storedUser);
+              localInterests = user?.interests || user?.profile?.interests || [];
+              console.log('📦 Found interests in localStorage:', localInterests);
+            }
+          } catch(e) {
+            console.log('Error reading localStorage');
           }
+          
+          // If still no interests, use default Web Development
+          if (localInterests.length === 0) {
+            console.log('⚠️ No interests in localStorage, using default Web Development');
+            localInterests = ['Web Development'];
+          }
+          
+          const responses = this.getResponseTemplates(localInterests);
+          return {
+            data: {
+              response: responses['course_recommendation'] || responses['general_help'],
+              isProjectRelated: true,
+              showMeetAdmin: false,
+              timestamp: new Date(),
+              conversationId: 'ai_' + Date.now(),
+              messageId: 'msg_' + Date.now(),
+              isAIGenerated: true
+            },
+            message: 'Response generated from local interests',
+            status: 'success' as const
+          };
         }
         
         return {
