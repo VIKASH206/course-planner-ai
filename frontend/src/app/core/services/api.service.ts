@@ -2668,7 +2668,7 @@ How can I help you with your learning today?`,
       catchError(error => {
         console.error('Backend AI API error, using intent-based fallback:', error);
         // Use intent-based intelligent fallback responses
-        return this.getIntentBasedResponse(message, intent);
+        return this.getIntentBasedResponse(message, intent, userId);
       }),
       delay(1500)
     );
@@ -2704,8 +2704,196 @@ How can I help you with your learning today?`,
   /**
    * Get intelligent response based on detected intent
    */
-  private getIntentBasedResponse(message: string, intent: string): Observable<ApiResponse<any>> {
-    const responses: { [key: string]: string } = {
+  private getIntentBasedResponse(message: string, intent: string, userId?: string): Observable<ApiResponse<any>> {
+    // For course recommendations, fetch user profile to personalize
+    if (intent === 'course_recommendation' && userId) {
+      return this.getUserProfile(userId).pipe(
+        map(profileResponse => {
+          const userInterests = profileResponse?.data?.interests || profileResponse?.interests || [];
+          const responses = this.getResponseTemplates(userInterests);
+          
+          return {
+            data: {
+              response: responses[intent] || responses['general_help'],
+              conversationId: 'local_' + Date.now(),
+              messageId: 'msg_' + Date.now(),
+              timestamp: new Date(),
+              isAIGenerated: true,
+              isProjectRelated: true
+            },
+            message: 'AI response generated',
+            status: 'success' as const
+          };
+        }),
+        catchError(error => {
+          console.error('Error fetching user profile, using default recommendations:', error);
+          // Fallback to default if profile fetch fails
+          const responses = this.getResponseTemplates([]);
+          return of({
+            data: {
+              response: responses[intent] || responses['general_help'],
+              conversationId: 'local_' + Date.now(),
+              messageId: 'msg_' + Date.now(),
+              timestamp: new Date(),
+              isAIGenerated: true,
+              isProjectRelated: true
+            },
+            message: 'AI response generated',
+            status: 'success' as const
+          });
+        }),
+        delay(1500)
+      );
+    }
+
+    // For other intents, use default responses
+    const responses = this.getResponseTemplates([]);
+    return of({
+      data: {
+        response: responses[intent] || responses['general_help'],
+        conversationId: 'local_' + Date.now(),
+        messageId: 'msg_' + Date.now(),
+        timestamp: new Date(),
+        isAIGenerated: true,
+        isProjectRelated: true
+      },
+      message: 'AI response generated',
+      status: 'success' as const
+    }).pipe(delay(1500));
+  }
+
+  /**
+   * Generate response templates based on user interests
+   */
+  private getResponseTemplates(userInterests: string[]): { [key: string]: string } {
+    // Determine primary interest
+    const hasAIInterest = userInterests.some(interest => 
+      interest.toLowerCase().includes('artificial intelligence') ||
+      interest.toLowerCase().includes('ai') ||
+      interest.toLowerCase().includes('machine learning') ||
+      interest.toLowerCase().includes('deep learning')
+    );
+
+    const hasWebDevInterest = userInterests.some(interest => 
+      interest.toLowerCase().includes('web development') ||
+      interest.toLowerCase().includes('javascript') ||
+      interest.toLowerCase().includes('frontend')
+    );
+
+    // Generate personalized recommendation based on user's primary interest
+    let recommendationResponse = '';
+    
+    if (hasAIInterest) {
+      // AI/ML focused recommendations
+      recommendationResponse = `💡 **Personalized Course Recommendations**
+
+Based on your learning history and goals, here are my top recommendations:
+
+**🎯 HIGHLY RECOMMENDED FOR YOU:**
+
+**1. Intermediate Artificial Intelligence** ⭐ Best Match
+   • Why: Matches your AI interest perfectly
+   • Career Impact: +60% salary potential
+   • Job Demand: Extremely High
+   • Duration: 10 weeks
+   • **Start This Week!**
+
+**2. Advanced Machine Learning** 🔥
+   • Why: Deep dive into ML algorithms
+   • Next Step: Neural networks, deep learning
+   • Duration: 12 weeks
+   • Perfect for: Your current AI skill level
+
+**3. Computer Vision with Python** 🏗️
+   • Why: Practical AI application
+   • Topics: Image processing, object detection, CNNs
+   • Duration: 8 weeks
+   • Recommended: Build impressive AI projects
+
+**📊 Personalization Based On:**
+• Your interests: Artificial Intelligence, Machine Learning
+• Current level: Intermediate
+• Career goal: AI/ML Engineer
+• Time available: 10-15 hours/week
+
+**🎓 Learning Path Suggestion:**
+1. Start with Intermediate AI (recommended)
+2. Progress to Advanced ML (3 months)
+3. Specialize in Computer Vision (6 months)
+
+Would you like to enroll in any of these courses? I can help you plan your schedule! 📅`;
+    } else if (hasWebDevInterest) {
+      // Web development focused recommendations
+      recommendationResponse = `💡 **Personalized Course Recommendations**
+
+Based on your learning history and goals, here are my top recommendations:
+
+**🎯 HIGHLY RECOMMENDED FOR YOU:**
+
+**1. Advanced JavaScript & TypeScript** ⭐ Best Match
+   • Why: Builds on your JS knowledge
+   • Career Impact: +45% salary potential
+   • Job Demand: Very High
+   • Duration: 8 weeks
+   • **Start This Week!**
+
+**2. React Advanced Patterns** 🔥
+   • Why: You've completed React basics
+   • Next Step: Master hooks, context, performance
+   • Duration: 6 weeks
+   • Perfect for: Your current skill level
+
+**3. System Design & Architecture** 🏗️
+   • Why: Level up to senior roles
+   • Topics: Scalability, microservices, databases
+   • Duration: 10 weeks
+   • Recommended: After completing current courses
+
+**📊 Personalization Based On:**
+• Your interests: Web Development, Frontend
+• Current level: Intermediate
+• Career goal: Full-Stack Developer
+• Time available: 10-15 hours/week
+
+**🎓 Learning Path Suggestion:**
+1. Complete current React course (75% done)
+2. Start Advanced JavaScript (recommended)
+3. Move to System Design (3 months)
+
+Would you like to enroll in any of these courses? I can help you plan your schedule! 📅`;
+    } else {
+      // Generic recommendations
+      recommendationResponse = `💡 **Personalized Course Recommendations**
+
+Based on your profile, here are my top recommendations:
+
+**🎯 HIGHLY RECOMMENDED FOR YOU:**
+
+**1. Introduction to Programming** ⭐ Best Match
+   • Why: Perfect starting point
+   • Career Impact: Foundation for tech career
+   • Job Demand: Very High
+   • Duration: 8 weeks
+
+**2. Data Science Fundamentals** 🔥
+   • Why: High demand skill
+   • Next Step: Analytics and insights
+   • Duration: 10 weeks
+
+**3. Web Development Basics** 🏗️
+   • Why: Build real-world applications
+   • Topics: HTML, CSS, JavaScript
+   • Duration: 8 weeks
+
+**📊 Personalization Based On:**
+• Your profile and interests
+• Current level: Beginner-Intermediate
+• Time available: 10-15 hours/week
+
+Would you like to enroll in any of these courses? I can help you plan your schedule! 📅`;
+    }
+
+    return {
       'course_search': `🔍 **Available Courses Found!**
 
 I can help you find the perfect courses! Here's what I found:
@@ -2743,43 +2931,7 @@ I can help you find the perfect courses! Here's what I found:
 
 Want me to recommend specific courses based on your interests? Just let me know what you're looking for! 🎯`,
 
-      'course_recommendation': `💡 **Personalized Course Recommendations**
-
-Based on your learning history and goals, here are my top recommendations:
-
-**🎯 HIGHLY RECOMMENDED FOR YOU:**
-
-**1. Advanced JavaScript & TypeScript** ⭐ Best Match
-   • Why: Builds on your JS knowledge
-   • Career Impact: +45% salary potential
-   • Job Demand: Very High
-   • Duration: 8 weeks
-   • **Start This Week!**
-
-**2. React Advanced Patterns** 🔥
-   • Why: You've completed React basics
-   • Next Step: Master hooks, context, performance
-   • Duration: 6 weeks
-   • Perfect for: Your current skill level
-
-**3. System Design & Architecture** 🏗️
-   • Why: Level up to senior roles
-   • Topics: Scalability, microservices, databases
-   • Duration: 10 weeks
-   • Recommended: After completing current courses
-
-**📊 Personalization Based On:**
-• Your interests: Web Development, Frontend
-• Current level: Intermediate
-• Career goal: Full-Stack Developer
-• Time available: 10-15 hours/week
-
-**🎓 Learning Path Suggestion:**
-1. Complete current React course (75% done)
-2. Start Advanced JavaScript (recommended)
-3. Move to System Design (3 months)
-
-Would you like to enroll in any of these courses? I can help you plan your schedule! 📅`,
+      'course_recommendation': recommendationResponse,
 
       'plan_create': `📅 **Creating Your Personalized Study Plan**
 
