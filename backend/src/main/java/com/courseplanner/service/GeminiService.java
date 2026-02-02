@@ -343,8 +343,15 @@ public class GeminiService {
             prompt.append("IMPORTANT: Do NOT recommend JavaScript/TypeScript courses if user is interested in AI/ML!");
             
             System.out.println("📤 Sending prompt to Gemini API...");
-            String response = callGeminiAPI(prompt.toString());
-            System.out.println("✅ Received AI response");
+            
+            // TEMPORARY: Use mock response until Gemini API issues are resolved
+            // Comment out API call temporarily
+            // String response = callGeminiAPI(prompt.toString());
+            
+            // Generate mock response based on user interests
+            String response = generateMockRecommendation(userInterests, experienceLevel);
+            
+            System.out.println("✅ Using mock response (Gemini API temporarily disabled)");
             
             return response;
             
@@ -353,6 +360,46 @@ public class GeminiService {
             e.printStackTrace();
             return "I'd love to give you personalized recommendations! Please make sure your profile interests are set up in your profile settings, " +
                    "and I'll suggest courses that perfectly match your learning goals. 🎯";
+        }
+    }
+    
+    /**
+     * Generate mock course recommendations based on user interests
+     * TEMPORARY: Used while Gemini API issues are being resolved
+     */
+    private String generateMockRecommendation(List<String> interests, String experienceLevel) {
+        String interestDisplay = String.join(", ", interests);
+        String primaryInterest = interests.get(0).toLowerCase();
+        
+        if (primaryInterest.contains("artificial intelligence") || primaryInterest.contains("ai") || 
+            primaryInterest.contains("machine learning")) {
+            return "💡 **Personalized Course Recommendations for " + interestDisplay + "**\n\n" +
+                   "Based on your interest in **" + interestDisplay + "**, here are my top recommendations:\n\n" +
+                   "**🎯 HIGHLY RECOMMENDED FOR YOU:**\n\n" +
+                   "**1. Introduction to Machine Learning** ⭐ Best Match\n" +
+                   "   • Why: Perfect starting point for AI enthusiasts\n" +
+                   "   • Topics: Supervised learning, neural networks, model training\n" +
+                   "   • Duration: 10 weeks\n" +
+                   "   • Level: " + (experienceLevel != null ? experienceLevel : "Beginner") + "\n\n" +
+                   "**2. Deep Learning Fundamentals** 🔥\n" +
+                   "   • Why: Essential for modern AI applications\n" +
+                   "   • Topics: CNNs, RNNs, TensorFlow, PyTorch\n" +
+                   "   • Duration: 12 weeks\n\n" +
+                   "**3. Natural Language Processing** 🗣️\n" +
+                   "   • Why: Build chatbots and text analysis systems\n" +
+                   "   • Topics: Text processing, transformers, BERT\n" +
+                   "   • Duration: 8 weeks\n\n" +
+                   "**📚 Browse the Courses section to explore these and more!**\n\n" +
+                   "Ready to start your AI learning journey? 🚀";
+        } else {
+            return "💡 **Personalized Course Recommendations for " + interestDisplay + "**\n\n" +
+                   "Based on your interests, I recommend exploring our course catalog in the **Courses** section.\n\n" +
+                   "**🎯 Suggested Learning Path:**\n" +
+                   "1. Start with beginner-friendly courses in your interest area\n" +
+                   "2. Practice with hands-on projects\n" +
+                   "3. Progress to advanced topics\n\n" +
+                   "**📚 Check the Courses page** to find courses matching: " + interestDisplay + "\n\n" +
+                   "Happy learning! 🚀";
         }
     }
 }
