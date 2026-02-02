@@ -3436,8 +3436,6 @@ Just ask naturally! I understand context and can help with specific or general q
 
 What would you like to explore today? 🚀`
     };
-
-    return responses;
   }
 
   // Helper method to determine if question is project-related
