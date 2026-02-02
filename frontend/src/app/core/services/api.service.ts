@@ -2925,70 +2925,174 @@ How can I help you with your learning today?`,
   private getResponseTemplates(userInterests: string[]): { [key: string]: string } {
     console.log('🎯 Generating templates for interests:', userInterests);
     
-    // Determine primary interest
-    const hasAIInterest = userInterests.some(interest => 
-      interest.toLowerCase().includes('artificial intelligence') ||
-      interest.toLowerCase().includes('ai') ||
-      interest.toLowerCase().includes('machine learning') ||
-      interest.toLowerCase().includes('deep learning')
-    );
+    // Get the actual interest string for display
+    const interestDisplay = userInterests.length > 0 ? userInterests.join(', ') : 'Not specified';
+    
+    // Determine primary interest - check each interest individually
+    const hasAIInterest = userInterests.some(interest => {
+      const lowerInterest = interest.toLowerCase();
+      return lowerInterest.includes('artificial intelligence') ||
+             lowerInterest.includes('ai') ||
+             lowerInterest.includes('machine learning') ||
+             lowerInterest.includes('deep learning') ||
+             lowerInterest.includes('data science') ||
+             lowerInterest.includes('neural') ||
+             lowerInterest.includes('nlp');
+    });
 
-    const hasWebDevInterest = userInterests.some(interest => 
-      interest.toLowerCase().includes('web development') ||
-      interest.toLowerCase().includes('javascript') ||
-      interest.toLowerCase().includes('frontend')
-    );
+    const hasWebDevInterest = userInterests.some(interest => {
+      const lowerInterest = interest.toLowerCase();
+      return lowerInterest.includes('web development') ||
+             lowerInterest.includes('web dev') ||
+             lowerInterest.includes('javascript') ||
+             lowerInterest.includes('frontend') ||
+             lowerInterest.includes('front-end') ||
+             lowerInterest.includes('react') ||
+             lowerInterest.includes('angular') ||
+             lowerInterest.includes('vue');
+    });
+    
+    const hasDataScienceInterest = userInterests.some(interest => {
+      const lowerInterest = interest.toLowerCase();
+      return lowerInterest.includes('data science') ||
+             lowerInterest.includes('data analytics') ||
+             lowerInterest.includes('big data') ||
+             lowerInterest.includes('statistics');
+    });
+    
+    const hasMobileInterest = userInterests.some(interest => {
+      const lowerInterest = interest.toLowerCase();
+      return lowerInterest.includes('mobile') ||
+             lowerInterest.includes('android') ||
+             lowerInterest.includes('ios') ||
+             lowerInterest.includes('flutter') ||
+             lowerInterest.includes('react native');
+    });
 
-    console.log('✅ Has AI Interest:', hasAIInterest);
-    console.log('✅ Has Web Dev Interest:', hasWebDevInterest);
+    console.log('✅ Interest Analysis:');
+    console.log('   - AI Interest:', hasAIInterest);
+    console.log('   - Web Dev Interest:', hasWebDevInterest);
+    console.log('   - Data Science Interest:', hasDataScienceInterest);
+    console.log('   - Mobile Interest:', hasMobileInterest);
 
     // Generate personalized recommendation based on user's primary interest
     let recommendationResponse = '';
     
     if (hasAIInterest) {
       // AI/ML focused recommendations
-      recommendationResponse = `💡 **Personalized Course Recommendations**
+      recommendationResponse = `💡 **Personalized Course Recommendations for ${interestDisplay}**
 
-Based on your learning history and goals, here are my top recommendations:
+Based on your interest in **${interestDisplay}**, here are my top recommendations:
 
 **🎯 HIGHLY RECOMMENDED FOR YOU:**
 
 **1. Intermediate Artificial Intelligence** ⭐ Best Match
-   • Why: Matches your AI interest perfectly
-   • Career Impact: +60% salary potential
-   • Job Demand: Extremely High
+   • Why: Perfect match for your AI interest
+   • Career Impact: +60% salary potential in AI roles
+   • Job Demand: Extremely High (Growing 35% annually)
    • Duration: 10 weeks
    • **Start This Week!**
 
-**2. Advanced Machine Learning** 🔥
-   • Why: Deep dive into ML algorithms
-   • Next Step: Neural networks, deep learning
+**2. Deep Learning & Neural Networks** 🔥
+   • Why: Essential for modern AI applications
+   • Topics: CNNs, RNNs, Transformers, GANs
    • Duration: 12 weeks
-   • Perfect for: Your current AI skill level
+   • Perfect for: Building intelligent systems
 
-**3. Computer Vision with Python** 🏗️
-   • Why: Practical AI application
-   • Topics: Image processing, object detection, CNNs
+**3. Natural Language Processing (NLP)** 🗣️
+   • Why: ChatGPT, AI assistants are the future
+   • Topics: Text processing, sentiment analysis, chatbots
    • Duration: 8 weeks
-   • Recommended: Build impressive AI projects
+   • Recommended: High-demand AI specialization
+
+**4. Computer Vision with Python** 👁️
+   • Why: Image/video AI is booming
+   • Topics: Object detection, face recognition, autonomous systems
+   • Duration: 10 weeks
+   • Great for: Building real-world AI projects
 
 **📊 Personalization Based On:**
-• Your interests: Artificial Intelligence, Machine Learning
-• Current level: Intermediate
+• Your interests: ${interestDisplay}
 • Career goal: AI/ML Engineer
-• Time available: 10-15 hours/week
+• Industry trend: AI jobs increased 74% in 5 years
 
-**🎓 Learning Path Suggestion:**
-1. Start with Intermediate AI (recommended)
-2. Progress to Advanced ML (3 months)
-3. Specialize in Computer Vision (6 months)
+**🎓 Recommended Learning Path:**
+1. Start with Intermediate AI ➡️ Foundation
+2. Progress to Deep Learning ➡️ 3 months
+3. Specialize in NLP or Computer Vision ➡️ 6 months
 
-Would you like to enroll in any of these courses? I can help you plan your schedule! 📅`;
+Would you like to enroll in any of these courses? 📅`;
+    } else if (hasDataScienceInterest) {
+      // Data Science focused recommendations
+      recommendationResponse = `💡 **Personalized Course Recommendations for ${interestDisplay}**
+
+Based on your interest in **${interestDisplay}**, here are my top recommendations:
+
+**🎯 HIGHLY RECOMMENDED FOR YOU:**
+
+**1. Python for Data Science** ⭐ Best Match
+   • Why: Foundation of all data science work
+   • Career Impact: +55% salary potential
+   • Job Demand: Very High
+   • Duration: 8 weeks
+   • **Start This Week!**
+
+**2. Machine Learning for Data Analysis** 📊
+   • Why: Extract insights from data
+   • Topics: Regression, classification, clustering
+   • Duration: 10 weeks
+   • Perfect for: Making data-driven decisions
+
+**3. Data Visualization & Storytelling** 📈
+   • Why: Communicate findings effectively
+   • Topics: Tableau, Power BI, matplotlib, seaborn
+   • Duration: 6 weeks
+   • Recommended: Essential for presentations
+
+**📊 Personalization Based On:**
+• Your interests: ${interestDisplay}
+• Career goal: Data Scientist/Analyst
+• Industry trend: Data roles growing 28% annually
+
+Would you like to enroll in any of these courses? 📅`;
+    } else if (hasMobileInterest) {
+      // Mobile Development focused recommendations
+      recommendationResponse = `💡 **Personalized Course Recommendations for ${interestDisplay}**
+
+Based on your interest in **${interestDisplay}**, here are my top recommendations:
+
+**🎯 HIGHLY RECOMMENDED FOR YOU:**
+
+**1. React Native - Cross Platform Apps** ⭐ Best Match
+   • Why: Build iOS & Android with one codebase
+   • Career Impact: +40% salary potential
+   • Job Demand: Very High
+   • Duration: 10 weeks
+   • **Start This Week!**
+
+**2. Flutter & Dart Development** 📱
+   • Why: Google's modern mobile framework
+   • Topics: Widgets, state management, animations
+   • Duration: 8 weeks
+   • Perfect for: Beautiful, fast apps
+
+**3. Native iOS Development (Swift)** 🍎
+   • Why: Premium app market
+   • Topics: SwiftUI, UIKit, App Store deployment
+   • Duration: 12 weeks
+   • Recommended: High-paying iOS jobs
+
+**📊 Personalization Based On:**
+• Your interests: ${interestDisplay}
+• Career goal: Mobile App Developer
+• Industry trend: Mobile apps market $935B by 2027
+
+Would you like to enroll in any of these courses? 📅`;
     } else if (hasWebDevInterest) {
       // Web development focused recommendations
-      recommendationResponse = `💡 **Personalized Course Recommendations**
+      recommendationResponse = `💡 **Personalized Course Recommendations for ${interestDisplay}**
 
-Based on your learning history and goals, here are my top recommendations:
+Based on your interest in **${interestDisplay}**, here are my top recommendations:
 
 **🎯 HIGHLY RECOMMENDED FOR YOU:**
 
@@ -3000,29 +3104,23 @@ Based on your learning history and goals, here are my top recommendations:
    • **Start This Week!**
 
 **2. React Advanced Patterns** 🔥
-   • Why: You've completed React basics
-   • Next Step: Master hooks, context, performance
+   • Why: Master modern frontend
+   • Topics: Hooks, context, performance optimization
    • Duration: 6 weeks
-   • Perfect for: Your current skill level
+   • Perfect for: Building scalable apps
 
-**3. System Design & Architecture** 🏗️
-   • Why: Level up to senior roles
-   • Topics: Scalability, microservices, databases
+**3. Node.js Backend Development** 🏗️
+   • Why: Full-stack capability
+   • Topics: Express, APIs, databases, authentication
    • Duration: 10 weeks
-   • Recommended: After completing current courses
+   • Recommended: Complete your full-stack journey
 
 **📊 Personalization Based On:**
-• Your interests: Web Development, Frontend
-• Current level: Intermediate
+• Your interests: ${interestDisplay}
 • Career goal: Full-Stack Developer
-• Time available: 10-15 hours/week
+• Industry trend: Web dev jobs remain stable
 
-**🎓 Learning Path Suggestion:**
-1. Complete current React course (75% done)
-2. Start Advanced JavaScript (recommended)
-3. Move to System Design (3 months)
-
-Would you like to enroll in any of these courses? I can help you plan your schedule! 📅`;
+Would you like to enroll in any of these courses? 📅`;
     } else {
       // No specific interest detected - prompt user to set interests
       recommendationResponse = `💡 **Let's Personalize Your Recommendations!**
