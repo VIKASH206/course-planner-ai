@@ -311,16 +311,34 @@ User Question: "${userMessage}"`;
   }
 
   private getUserContext(): UserContext {
-    // In real implementation, this would fetch from user's actual data
+    // Get actual user data from localStorage
+    let userInterests: string[] = [];
+    let currentCourses: string[] = [];
+    
+    try {
+      const storedUser = localStorage.getItem('course-planner-user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        userInterests = user?.interests || user?.profile?.interests || [];
+        // Get enrolled courses if available
+        const enrolledCourses = localStorage.getItem('enrolledCourses');
+        if (enrolledCourses) {
+          currentCourses = JSON.parse(enrolledCourses).map((c: any) => c.title);
+        }
+      }
+    } catch(e) {
+      console.log('Error reading user context from localStorage');
+    }
+    
     return {
-      currentCourses: ['React Fundamentals', 'Data Structures', 'JavaScript ES6+'],
-      progressSummary: 'JavaScript: 89%, React: 75%, Data Structures: 67%',
-      studyPreferences: 'Visual learner, prefers hands-on projects',
-      weakAreas: ['Data Structures', 'Algorithms'],
-      strongAreas: ['JavaScript', 'Frontend Development'],
-      studyStreak: 14,
-      totalStudyHours: 42,
-      recentActivity: 'Completed React Hooks assignment'
+      currentCourses: currentCourses.length > 0 ? currentCourses : ['No courses enrolled yet'],
+      progressSummary: 'Check your dashboard for detailed progress',
+      studyPreferences: userInterests.length > 0 ? `Interested in: ${userInterests.join(', ')}` : 'Not specified',
+      weakAreas: ['To be determined based on your progress'],
+      strongAreas: userInterests.length > 0 ? userInterests : ['Not specified yet'],
+      studyStreak: 0,
+      totalStudyHours: 0,
+      recentActivity: 'Getting started with learning'
     };
   }
 
