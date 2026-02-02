@@ -2705,45 +2705,67 @@ How can I help you with your learning today?`,
    * Get intelligent response based on detected intent
    */
   private getIntentBasedResponse(message: string, intent: string, userId?: string): Observable<ApiResponse<any>> {
-    // For course recommendations, fetch user profile to personalize
-    if (intent === 'course_recommendation' && userId) {
-      return this.getUserProfile(userId).pipe(
-        map(profileResponse => {
-          const userInterests = profileResponse?.data?.interests || profileResponse?.interests || [];
-          const responses = this.getResponseTemplates(userInterests);
-          
-          return {
-            data: {
-              response: responses[intent] || responses['general_help'],
-              conversationId: 'local_' + Date.now(),
-              messageId: 'msg_' + Date.now(),
-              timestamp: new Date(),
-              isAIGenerated: true,
-              isProjectRelated: true
-            },
-            message: 'AI response generated',
-            status: 'success' as const
-          };
-        }),
-        catchError(error => {
-          console.error('Error fetching user profile, using default recommendations:', error);
-          // Fallback to default if profile fetch fails
-          const responses = this.getResponseTemplates([]);
-          return of({
-            data: {
-              response: responses[intent] || responses['general_help'],
-              conversationId: 'local_' + Date.now(),
-              messageId: 'msg_' + Date.now(),
-              timestamp: new Date(),
-              isAIGenerated: true,
-              isProjectRelated: true
-            },
-            message: 'AI response generated',
-            status: 'success' as const
-          });
-        }),
-        delay(1500)
-      );
+    // For course recommendations, try to personalize
+    if (intent === 'course_recommendation') {
+      // First try to get user profile if userId is available
+      if (userId) {
+        return this.getUserProfile(userId).pipe(
+          map(profileResponse => {
+            const userInterests = profileResponse?.data?.interests || profileResponse?.interests || [];
+            console.log('📊 User Profile Interests:', userInterests);
+            const responses = this.getResponseTemplates(userInterests);
+            
+            return {
+              data: {
+                response: responses[intent] || responses['general_help'],
+                conversationId: 'local_' + Date.now(),
+                messageId: 'msg_' + Date.now(),
+                timestamp: new Date(),
+                isAIGenerated: true,
+                isProjectRelated: true
+              },
+              message: 'AI response generated with user profile',
+              status: 'success' as const
+            };
+          }),
+          catchError(error => {
+            console.error('Error fetching user profile, using message context:', error);
+            // Fallback: detect interest from message context
+            const detectedInterests = this.detectInterestsFromMessage(message);
+            const responses = this.getResponseTemplates(detectedInterests);
+            return of({
+              data: {
+                response: responses[intent] || responses['general_help'],
+                conversationId: 'local_' + Date.now(),
+                messageId: 'msg_' + Date.now(),
+                timestamp: new Date(),
+                isAIGenerated: true,
+                isProjectRelated: true
+              },
+              message: 'AI response generated from message context',
+              status: 'success' as const
+            });
+          }),
+          delay(1500)
+        );
+      } else {
+        // No userId - detect from message
+        console.log('⚠️ No userId provided, detecting from message context');
+        const detectedInterests = this.detectInterestsFromMessage(message);
+        const responses = this.getResponseTemplates(detectedInterests);
+        return of({
+          data: {
+            response: responses[intent] || responses['general_help'],
+            conversationId: 'local_' + Date.now(),
+            messageId: 'msg_' + Date.now(),
+            timestamp: new Date(),
+            isAIGenerated: true,
+            isProjectRelated: true
+          },
+          message: 'AI response generated from message context',
+          status: 'success' as const
+        }).pipe(delay(1500));
+      }
     }
 
     // For other intents, use default responses
@@ -2760,6 +2782,51 @@ How can I help you with your learning today?`,
       message: 'AI response generated',
       status: 'success' as const
     }).pipe(delay(1500));
+  }
+
+  /**
+   * Detect interests from user message when profile is not available
+   */
+  private detectInterestsFromMessage(message: string): string[] {
+    const lowerMessage = message.toLowerCase();
+    const detectedInterests: string[] = [];
+
+    // First try to get from localStorage as backup
+    try {
+      const currentUser = localStorage.getItem('currentUser');
+      if (currentUser) {
+        const user = JSON.parse(currentUser);
+        const storedInterests = user?.profile?.interests || user?.interests || [];
+        if (storedInterests.length > 0) {
+          console.log('📦 Found interests in localStorage:', storedInterests);
+          return storedInterests;
+        }
+      }
+    } catch (e) {
+      console.log('No interests found in localStorage');
+    }
+
+    // Check for AI/ML related keywords
+    if (lowerMessage.includes('ai') || 
+        lowerMessage.includes('artificial intelligence') ||
+        lowerMessage.includes('machine learning') ||
+        lowerMessage.includes('deep learning') ||
+        lowerMessage.includes('neural network') ||
+        lowerMessage.includes('data science')) {
+      detectedInterests.push('Artificial Intelligence');
+    }
+
+    // Check for web development keywords
+    if (lowerMessage.includes('web') ||
+        lowerMessage.includes('javascript') ||
+        lowerMessage.includes('react') ||
+        lowerMessage.includes('frontend') ||
+        lowerMessage.includes('backend')) {
+      detectedInterests.push('Web Development');
+    }
+
+    console.log('🔍 Detected interests from message:', detectedInterests);
+    return detectedInterests;
   }
 
   /**

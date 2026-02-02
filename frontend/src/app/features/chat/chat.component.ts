@@ -11,6 +11,7 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth-backend.service';
 import { trigger, transition, style, animate } from '@angular/animations';
 
 interface ChatMessage {
@@ -912,6 +913,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   private destroy$ = new Subject<void>();
   private snackBar = inject(MatSnackBar);
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   private shouldScrollToBottom = false;
 
   // Signals for reactive state management
@@ -1048,8 +1050,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     console.log(`🧠 Detected Intent: ${detectedIntent}`);
     console.log(`📝 Contextual Prompt: ${contextualPrompt}`);
 
+    // Get actual logged-in user ID
+    const userId = this.authService.getCurrentUserId() || undefined;
+    console.log(`👤 User ID: ${userId}`);
+
     // Send to AI service with detected intent and context
-    this.apiService.sendAIMessage(messageText, contextualPrompt, 'user123')
+    this.apiService.sendAIMessage(messageText, contextualPrompt, userId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
