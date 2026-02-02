@@ -21,7 +21,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = {"http://localhost:4200", "http://localhost:4201"}, allowCredentials = "true")
+@CrossOrigin(origins = {
+    "http://localhost:4200", 
+    "http://localhost:4201",
+    "https://course-planner-ai-swart.vercel.app",
+    "https://course-planner-ai-nine.vercel.app"
+}, allowCredentials = "true")
 public class AIController {
 
     @Autowired
