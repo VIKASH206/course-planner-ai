@@ -107,15 +107,20 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
   private pingBackend() {
     this.serverStatus.set('checking');
-    fetch(`${environment.apiUrl}/ai/health`)
-      .then(() => this.serverStatus.set('ready'))
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s max
+    fetch(`${environment.apiUrl}/ai/health`, { signal: controller.signal })
+      .then(() => { clearTimeout(timeoutId); this.serverStatus.set('ready'); })
       .catch(() => {
-        // Server is sleeping on Render free tier - show wake-up message
+        clearTimeout(timeoutId);
+        // Server is sleeping on Render free tier - show wake-up message, retry once
         this.serverStatus.set('starting');
         setTimeout(() => {
-          fetch(`${environment.apiUrl}/ai/health`)
-            .then(() => this.serverStatus.set('ready'))
-            .catch(() => this.serverStatus.set('ready')); // Hide banner after 2nd try
+          const c2 = new AbortController();
+          const t2 = setTimeout(() => c2.abort(), 20000);
+          fetch(`${environment.apiUrl}/ai/health`, { signal: c2.signal })
+            .then(() => { clearTimeout(t2); this.serverStatus.set('ready'); })
+            .catch(() => { clearTimeout(t2); this.serverStatus.set('ready'); });
         }, 15000);
       });
   }

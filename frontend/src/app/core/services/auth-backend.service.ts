@@ -323,6 +323,7 @@ export class AuthService {
    */
   private clearAuthData(): void {
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem('userRole');
     
     this._currentUser.set(null);
     this._isLoggedIn.set(false);
@@ -334,7 +335,14 @@ export class AuthService {
   private getStoredUser(): AuthUser | null {
     try {
       const userData = localStorage.getItem(this.USER_KEY);
-      return userData ? JSON.parse(userData) : null;
+      if (!userData) return null;
+      const user = JSON.parse(userData) as AuthUser;
+      // Always keep userRole in sync — repairs missing key from old sessions
+      const role = user.role || 'STUDENT';
+      if (!localStorage.getItem('userRole')) {
+        localStorage.setItem('userRole', role);
+      }
+      return user;
     } catch (error) {
       console.error('Error parsing stored user data:', error);
       return null;

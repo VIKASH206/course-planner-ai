@@ -33,11 +33,16 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state) =
     url: state.url
   });
 
-  // If no role found, redirect to login
+  // If no role found but user IS logged in, safely default to STUDENT (prevents infinite loop)
   if (!actualRole) {
-    console.warn('RoleGuard: No role found, redirecting to login');
-    router.navigate(['/auth/login']);
-    return false;
+    console.warn('RoleGuard: No role found but user is logged in — defaulting to STUDENT');
+    if (expectedRole === 'ADMIN') {
+      // Definitely not admin, go to student dashboard
+      router.navigate(['/dashboard'], { replaceUrl: true });
+      return false;
+    }
+    // Allow STUDENT routes with defaulted role
+    return true;
   }
 
   // Check if roles match
