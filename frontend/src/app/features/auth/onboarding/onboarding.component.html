@@ -82,36 +82,59 @@
             </p>
 
             <div class="space-y-4 mb-6">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Primary Study Goal (Required)</mat-label>
-                <input matInput formControlName="studyGoal1" 
-                       placeholder="e.g., Master Python programming">
-                <mat-icon matSuffix>flag</mat-icon>
-                <mat-error *ngIf="goalsForm.get('studyGoal1')?.hasError('required')">
-                  Please enter your primary goal
-                </mat-error>
-              </mat-form-field>
+              <!-- Primary Study Goal -->
+              <div class="relative">
+                <label class="block text-xs font-medium text-purple-600 dark:text-purple-400 mb-1 ml-1">
+                  Primary Study Goal (Required) *
+                </label>
+                <div class="relative">
+                  <input formControlName="studyGoal1"
+                         placeholder="e.g., Master Python programming"
+                         class="w-full h-14 px-4 pr-12 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors duration-200 text-sm" />
+                  <mat-icon class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">flag</mat-icon>
+                </div>
+                <p *ngIf="goalsForm.get('studyGoal1')?.hasError('required') && goalsForm.get('studyGoal1')?.touched"
+                   class="text-red-500 text-xs mt-1 ml-1">Please enter your primary goal</p>
+              </div>
 
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Secondary Study Goal</mat-label>
-                <input matInput formControlName="studyGoal2" 
-                       placeholder="e.g., Build a portfolio website">
-                <mat-icon matSuffix>flag</mat-icon>
-              </mat-form-field>
+              <!-- Secondary Study Goal -->
+              <div class="relative">
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 ml-1">
+                  Secondary Study Goal
+                </label>
+                <div class="relative">
+                  <input formControlName="studyGoal2"
+                         placeholder="e.g., Build a portfolio website"
+                         class="w-full h-14 px-4 pr-12 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors duration-200 text-sm" />
+                  <mat-icon class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">flag</mat-icon>
+                </div>
+              </div>
 
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Additional Goal</mat-label>
-                <input matInput formControlName="studyGoal3" 
-                       placeholder="e.g., Get AWS certification">
-                <mat-icon matSuffix>flag</mat-icon>
-              </mat-form-field>
+              <!-- Additional Goal -->
+              <div class="relative">
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 ml-1">
+                  Additional Goal
+                </label>
+                <div class="relative">
+                  <input formControlName="studyGoal3"
+                         placeholder="e.g., Get AWS certification"
+                         class="w-full h-14 px-4 pr-12 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors duration-200 text-sm" />
+                  <mat-icon class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">flag</mat-icon>
+                </div>
+              </div>
 
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Career Goal (Optional)</mat-label>
-                <input matInput formControlName="careerGoal" 
-                       placeholder="e.g., Become a Full Stack Developer">
-                <mat-icon matSuffix>work</mat-icon>
-              </mat-form-field>
+              <!-- Career Goal -->
+              <div class="relative">
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 ml-1">
+                  Career Goal (Optional)
+                </label>
+                <div class="relative">
+                  <input formControlName="careerGoal"
+                         placeholder="e.g., Become a Full Stack Developer"
+                         class="w-full h-14 px-4 pr-12 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors duration-200 text-sm" />
+                  <mat-icon class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">work</mat-icon>
+                </div>
+              </div>
             </div>
 
             <div class="flex justify-between">
