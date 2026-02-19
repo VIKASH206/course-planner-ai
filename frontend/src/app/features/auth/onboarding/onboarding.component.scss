@@ -7,6 +7,31 @@ mat-card {
   border: none;
 }
 
+.onboarding-card {
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(139, 92, 246, 0.3),
+    0 0 40px rgba(99, 102, 241, 0.15);
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(139, 92, 246, 0.5),
+      0 0 60px rgba(99, 102, 241, 0.25);
+  }
+}
+
+// Interest category card hover color
+.cursor-pointer {
+  &:hover {
+    border-color: rgb(99, 102, 241) !important;
+    background-color: rgba(99, 102, 241, 0.05);
+  }
+}
+
 mat-stepper {
   background: transparent;
 }
@@ -16,23 +41,60 @@ mat-stepper {
     background: transparent !important;
   }
 
+  // Stepper header background tint
+  .mat-horizontal-stepper-header-container {
+    background: linear-gradient(to right, rgba(139, 92, 246, 0.06), rgba(99, 102, 241, 0.06), rgba(59, 130, 246, 0.06));
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+    padding: 8px 0;
+  }
+
   .mat-step-header {
     &.cdk-keyboard-focused,
     &.cdk-program-focused,
     &:hover {
-      background-color: rgba(59, 130, 246, 0.1);
+      background-color: rgba(139, 92, 246, 0.1);
     }
+
+    // Active step icon color
+    &[aria-selected="true"] .mat-step-icon {
+      background-color: rgb(124, 58, 237) !important;
+    }
+
+    .mat-step-icon-selected,
+    .mat-step-icon-state-edit {
+      background-color: rgb(124, 58, 237) !important;
+    }
+  }
+
+  .mat-step-icon {
+    background-color: rgb(156, 163, 175);
+    
+    &.mat-step-icon-selected {
+      background-color: rgb(124, 58, 237) !important;
+    }
+
+    &.mat-step-icon-state-done,
+    &.mat-step-icon-state-edit {
+      background-color: rgb(124, 58, 237) !important;
+    }
+  }
+
+  // Stepper connector line
+  .mat-stepper-horizontal-line {
+    border-top-color: rgba(139, 92, 246, 0.3) !important;
   }
 
   .mat-step-label {
     color: rgb(107, 114, 128);
     
     &.mat-step-label-active {
-      color: rgb(59, 130, 246);
+      color: rgb(124, 58, 237);
+      font-weight: 600;
     }
 
     &.mat-step-label-selected {
-      color: rgb(59, 130, 246);
+      color: rgb(124, 58, 237);
+      font-weight: 600;
     }
   }
 
@@ -54,7 +116,7 @@ mat-stepper {
 
     &.mat-focused {
       .mat-form-field-outline-thick {
-        color: rgb(59, 130, 246) !important;
+        color: rgb(124, 58, 237) !important;
       }
       
       .mat-form-field-outline-start,
@@ -75,11 +137,11 @@ mat-stepper {
 
     &.mat-radio-checked {
       .mat-radio-outer-circle {
-        border-color: rgb(59, 130, 246);
+        border-color: rgb(124, 58, 237);
       }
       
       .mat-radio-inner-circle {
-        background-color: rgb(59, 130, 246);
+        background-color: rgb(124, 58, 237);
       }
     }
   }
@@ -95,11 +157,13 @@ mat-stepper {
       color: rgb(156, 163, 175);
       
       &.mat-step-label-active {
-        color: rgb(96, 165, 250);
+        color: rgb(167, 139, 250);
+        font-weight: 600;
       }
 
       &.mat-step-label-selected {
-        color: rgb(96, 165, 250);
+        color: rgb(167, 139, 250);
+        font-weight: 600;
       }
     }
   }
@@ -108,7 +172,7 @@ mat-stepper {
 // Loading spinner
 mat-spinner {
   ::ng-deep circle {
-    stroke: rgb(59, 130, 246);
+    stroke: rgb(124, 58, 237);
   }
 }
 

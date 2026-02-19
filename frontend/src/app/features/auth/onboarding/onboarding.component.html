@@ -5,7 +5,9 @@
       <p class="text-gray-300 text-sm sm:text-base md:text-lg">Help us personalize your learning experience</p>
     </div>
 
-    <mat-card class="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden">
+    <mat-card class="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden onboarding-card">
+      <!-- Gradient top header bar -->
+      <div class="h-2 w-full bg-gradient-to-r from-purple-600 via-blue-500 to-indigo-500"></div>
       <mat-stepper [linear]="true" #stepper class="bg-transparent">
         
         <mat-step [stepControl]="interestsForm" label="Your Interests">
@@ -22,12 +24,16 @@
                    (click)="toggleInterest(interest)"
                    [ngClass]="{
                      'ring-2': interest.selected,
-                     'ring-blue-500': interest.selected,
-                     'bg-blue-50': interest.selected,
-                     'dark:bg-blue-900/30': interest.selected
+                     'ring-purple-500': interest.selected,
+                     'border-purple-500': interest.selected,
+                     'bg-gradient-to-br': interest.selected,
+                     'from-purple-50': interest.selected,
+                     'to-indigo-50': interest.selected,
+                     'dark:from-purple-900/40': interest.selected,
+                     'dark:to-indigo-900/40': interest.selected
                    }"
-                   class="cursor-pointer p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 text-center">
-                <mat-icon class="text-blue-600 dark:text-blue-400 mb-2">{{ interest.icon }}</mat-icon>
+                   class="cursor-pointer p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 text-center">
+                <mat-icon [ngClass]="interest.selected ? 'text-purple-600 dark:text-purple-400' : 'text-blue-600 dark:text-blue-400'" class="mb-2">{{ interest.icon }}</mat-icon>
                 <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ interest.name }}</p>
               </div>
             </div>
@@ -36,17 +42,18 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Add your own interest
               </label>
-              <div class="flex gap-2">
-                <mat-form-field appearance="outline" class="flex-1">
-                  <mat-label>Custom Interest</mat-label>
-                  <input matInput 
-                         formControlName="customInterest"
-                         placeholder="e.g., Quantum Computing"
-                         (keyup.enter)="addCustomInterest()">
-                  <mat-icon matSuffix>add_circle_outline</mat-icon>
-                </mat-form-field>
-                <button mat-raised-button color="accent" type="button" (click)="addCustomInterest()" 
-                        class="h-14 px-6 flex items-center gap-2">
+              <div class="flex gap-2 items-center">
+                <div class="relative flex-1">
+                  <input
+                    formControlName="customInterest"
+                    placeholder="Custom Interest"
+                    (keyup.enter)="addCustomInterest()"
+                    class="w-full h-14 px-4 pr-12 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors duration-200 text-sm"
+                  />
+                  <mat-icon class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">add_circle_outline</mat-icon>
+                </div>
+                <button mat-raised-button color="accent" type="button" (click)="addCustomInterest()"
+                        class="h-14 px-6 flex items-center gap-2 !rounded-xl">
                   <mat-icon>add</mat-icon>
                   <span>Add</span>
                 </button>
