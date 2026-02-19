@@ -45,6 +45,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   googleButtonRendered = false;
   showResendButton = signal(false);
   resendEmail = signal('');
+  serverStatus = signal<'checking' | 'ready' | 'starting'>('checking');
 
   constructor(
     private fb: FormBuilder,
@@ -59,6 +60,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.createForm();
+
+    // Pre-warm Render backend (free tier sleeps after inactivity)
+    this.pingBackend();
 
     // Redirect if already logged in - role-based redirect with replaceUrl
     if (this.authService.isLoggedIn()) {
@@ -99,6 +103,21 @@ export class LoginComponent implements OnInit, AfterViewInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
       rememberMe: [false]
     });
+  }
+
+  private pingBackend() {
+    this.serverStatus.set('checking');
+    fetch(`${environment.apiUrl}/ai/health`)
+      .then(() => this.serverStatus.set('ready'))
+      .catch(() => {
+        // Server is sleeping on Render free tier - show wake-up message
+        this.serverStatus.set('starting');
+        setTimeout(() => {
+          fetch(`${environment.apiUrl}/ai/health`)
+            .then(() => this.serverStatus.set('ready'))
+            .catch(() => this.serverStatus.set('ready')); // Hide banner after 2nd try
+        }, 15000);
+      });
   }
 
   togglePasswordVisibility() {
@@ -148,17 +167,31 @@ export class LoginComponent implements OnInit, AfterViewInit {
       },
       error: (error: any) => {
         this.isLoading.set(false);
-        const errorMessage = error.message || 'Login failed. Please check your credentials.';
+        let errorMessage = error.message || 'Login failed. Please check your credentials.';
         
-        // Check if it's an email verification error
-        if (errorMessage.includes('Email not verified') || errorMessage.includes('verify')) {
+        // Render free-tier cold start / network timeout
+        if (
+          errorMessage.toLowerCase().includes('timeout') ||
+          errorMessage.toLowerCase().includes('timed out') ||
+          errorMessage.toLowerCase().includes('server error: 0') ||
+          errorMessage.toLowerCase().includes('unknown error') ||
+          errorMessage.toLowerCase().includes('http failure') ||
+          errorMessage.toLowerCase().includes('503') ||
+          errorMessage.toLowerCase().includes('504')
+        ) {
+          errorMessage = '⏳ Server is starting up (this takes ~30 sec on first use). Please wait a moment and try again.';
+          this.snackBar.open(errorMessage, 'Try Again', {
+            duration: 8000,
+            panelClass: ['error-snackbar']
+          });
+        } else if (errorMessage.includes('Email not verified') || errorMessage.includes('verify')) {
+          // Check if it's an email verification error
           this.showResendButton.set(true);
           this.resendEmail.set(email);
-          this.snackBar.open(
-            '❌ ' + errorMessage,
-            'Close',
-            { duration: 6000, panelClass: ['error-snackbar'] }
-          );
+          this.snackBar.open('❌ ' + errorMessage, 'Close', {
+            duration: 6000,
+            panelClass: ['error-snackbar']
+          });
         } else {
           this.snackBar.open(errorMessage, 'Close', {
             duration: 4000,
