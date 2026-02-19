@@ -137,16 +137,7 @@ export class OnboardingComponent implements OnInit {
             });
           }
           
-          // Load existing goals
-          if (profile.studyGoals && Array.isArray(profile.studyGoals)) {
-            if (profile.studyGoals[0]) this.goalsForm.get('studyGoal1')?.setValue(profile.studyGoals[0]);
-            if (profile.studyGoals[1]) this.goalsForm.get('studyGoal2')?.setValue(profile.studyGoals[1]);
-            if (profile.studyGoals[2]) this.goalsForm.get('studyGoal3')?.setValue(profile.studyGoals[2]);
-          }
-          
-          if (profile.careerGoal) {
-            this.goalsForm.get('careerGoal')?.setValue(profile.careerGoal);
-          }
+          // Note: Goals are intentionally not pre-filled so user enters fresh each visit
         }
         this.isLoading.set(false);
       },
