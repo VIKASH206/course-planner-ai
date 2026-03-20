@@ -370,20 +370,62 @@ public class GeminiService {
     private String buildOfflineFallbackResponse(String prompt) {
         String userMessage = extractBetween(prompt, "User message:", "\n");
         String context = extractBetween(prompt, "Context:", "\n");
+        String interests = extractBetween(prompt, "- Interests:", "\n");
+        String experience = extractBetween(prompt, "- Experience Level:", "\n");
         String question = (userMessage == null || userMessage.isBlank()) ? "your query" : userMessage.trim();
+        String normalizedQuestion = question.toLowerCase();
 
         StringBuilder response = new StringBuilder();
-        response.append("AI cloud model is temporarily unavailable, but I can still guide you based on your context.\n\n");
+        response.append("AI cloud model is temporarily unavailable, but I can still give you a targeted answer.\n\n");
         response.append("Question understood: ").append(question).append("\n\n");
-        response.append("Suggested next steps:\n");
-        response.append("1. Choose a course matching your current level (Beginner/Intermediate/Advanced).\n");
-        response.append("2. Check prerequisites first, then commit a weekly study schedule (3-6 hrs minimum).\n");
-        response.append("3. After each module, do one practice task and one revision session.\n");
-        response.append("4. Track progress weekly and adjust pace based on completion rate.\n");
+
+        boolean asksRecommendation = (normalizedQuestion.contains("recommend") || normalizedQuestion.contains("suggest"))
+                && normalizedQuestion.contains("course");
+        boolean asksPlan = normalizedQuestion.contains("study plan")
+                || normalizedQuestion.contains("schedule")
+                || normalizedQuestion.contains("roadmap")
+                || normalizedQuestion.contains("learning path");
+        boolean asksQuiz = normalizedQuestion.contains("quiz")
+                || normalizedQuestion.contains("test")
+                || normalizedQuestion.contains("mcq");
+
+        if (asksRecommendation) {
+            String interestLine = (interests == null || interests.isBlank() || "Not provided".equalsIgnoreCase(interests))
+                    ? "General"
+                    : interests;
+            String experienceLine = (experience == null || experience.isBlank() || "Not specified".equalsIgnoreCase(experience))
+                    ? "Beginner"
+                    : experience;
+
+            response.append("Recommended tracks for you (offline mode):\n");
+            response.append("1. Foundation Track (" ).append(experienceLine).append("): Start with 1 beginner-friendly core course and complete 30% in week 1.\n");
+            response.append("2. Skills Track (aligned to ").append(interestLine).append("): Pick 1 practical project-based course with assignments.\n");
+            response.append("3. Career Track: Add 1 market-relevant course (communication, interview prep, or portfolio).\n");
+            response.append("4. Selection rule: Prefer courses with clear prerequisites, updated content, and weekly milestones.\n");
+        } else if (asksPlan) {
+            response.append("Suggested study plan:\n");
+            response.append("1. Define weekly target: 3-6 study hours in fixed slots.\n");
+            response.append("2. Split learning: 60% concept, 30% practice, 10% revision.\n");
+            response.append("3. End each week with one self-test and one backlog cleanup session.\n");
+            response.append("4. Track completion % and adjust next week based on weak topics.\n");
+        } else if (asksQuiz) {
+            response.append("Quick quiz strategy:\n");
+            response.append("1. Start with 5 easy MCQs, then 5 medium, then 3 advanced.\n");
+            response.append("2. For each wrong answer, write one-line reason and revisit that concept.\n");
+            response.append("3. Repeat same topic quiz after 24 hours for retention.\n");
+        } else {
+            response.append("Suggested next steps:\n");
+            response.append("1. Choose a course matching your current level (Beginner/Intermediate/Advanced).\n");
+            response.append("2. Check prerequisites first, then commit a weekly study schedule.\n");
+            response.append("3. After each module, do one practice task and one revision session.\n");
+            response.append("4. Track progress weekly and adjust pace based on completion rate.\n");
+        }
 
         if (context != null && !context.isBlank()) {
             response.append("\nContext used: ").append(context.trim());
         }
+
+        response.append("\n\nNote: For full AI-generated personalized answers, ensure GROQ_API_KEY is set correctly in backend environment.");
 
         return response.toString();
     }
