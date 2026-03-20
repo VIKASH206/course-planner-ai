@@ -91,6 +91,8 @@ public class FirebaseAuthService {
                 );
             } catch (FirebaseAuthException ex) {
                 throw new IllegalArgumentException("Invalid or expired Firebase token", ex);
+            } catch (IllegalStateException ex) {
+                logger.warn("Firebase Admin SDK initialization failed. Falling back to Identity Toolkit verification.", ex);
             }
         }
 
