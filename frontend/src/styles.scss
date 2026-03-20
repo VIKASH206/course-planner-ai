@@ -1141,40 +1141,48 @@ input:user-invalid {
 
 // Dialog container
 .cdk-overlay-pane.ai-chatbot-dialog {
-  width: 90vw !important;
-  max-width: 1000px !important;
-  max-height: 85vh !important;
-  height: 85vh !important;
+  width: 92vw !important;
+  max-width: 1180px !important;
+  max-height: calc(100dvh - 12px) !important;
+  height: min(84vh, calc(100dvh - 12px)) !important;
 }
 
 .ai-chatbot-dialog {
-  width: 90vw !important;
-  max-width: 1000px !important;
-  max-height: 85vh !important;
-  height: 85vh !important;
+  width: 92vw !important;
+  max-width: 1180px !important;
+  max-height: calc(100dvh - 12px) !important;
+  height: min(84vh, calc(100dvh - 12px)) !important;
   
   .mat-mdc-dialog-container {
     padding: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow: hidden !important;
     border-radius: 16px !important;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
     background: transparent !important;
     width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
     max-width: none !important;
   }
   
   // Make dialog content fill the container
   .mat-mdc-dialog-surface {
     border-radius: 16px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    min-height: 0 !important;
     height: 100% !important;
+    max-height: none !important;
     background: transparent !important;
     width: 100% !important;
     max-width: none !important;
+  }
+
+  app-ai-chatbot {
+    display: block !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
   
   // Scrollable chat container
@@ -1194,11 +1202,11 @@ input:user-invalid {
     }
     
     &::-webkit-scrollbar-thumb {
-      background: rgba(147, 51, 234, 0.3) !important;
+      background: rgba(37, 99, 235, 0.35) !important;
       border-radius: 10px !important;
       
       &:hover {
-        background: rgba(147, 51, 234, 0.5) !important;
+        background: rgba(37, 99, 235, 0.55) !important;
       }
     }
   }
@@ -1207,35 +1215,26 @@ input:user-invalid {
 // Desktop/Laptop optimization (1024px+)
 @media (min-width: 1024px) {
   .cdk-overlay-pane.ai-chatbot-dialog {
-    width: 85vw !important;
-    max-width: 1000px !important;
-    max-height: 85vh !important;
+    width: 90vw !important;
+    max-width: 1180px !important;
+    max-height: calc(100dvh - 16px) !important;
+    height: min(84vh, calc(100dvh - 16px)) !important;
   }
   
   .ai-chatbot-dialog {
-    width: 85vw !important;
-    max-width: 1000px !important;
-    max-height: 85vh !important;
+    width: 90vw !important;
+    max-width: 1180px !important;
+    max-height: calc(100dvh - 16px) !important;
+    height: min(84vh, calc(100dvh - 16px)) !important;
     
     .mat-mdc-dialog-container {
       border-radius: 20px !important;
-      max-height: 85vh !important;
-      overflow-y: auto !important;
       width: 100% !important;
     }
     
     .mat-mdc-dialog-surface {
       border-radius: 20px !important;
-      max-height: 85vh !important;
-      overflow-y: auto !important;
       width: 100% !important;
-    }
-    
-    // Chat messages scrollable area
-    .overflow-y-auto, .chat-messages-scroll {
-      max-height: 500px !important;
-      min-height: 400px !important;
-      overflow-y: auto !important;
     }
   }
 }
@@ -1243,34 +1242,17 @@ input:user-invalid {
 // Large desktop (1440px+)
 @media (min-width: 1440px) {
   .cdk-overlay-pane.ai-chatbot-dialog {
-    width: 80vw !important;
-    max-width: 1200px !important;
-    max-height: 85vh !important;
+    width: 88vw !important;
+    max-width: 1280px !important;
+    max-height: calc(100dvh - 20px) !important;
+    height: min(86vh, calc(100dvh - 20px)) !important;
   }
   
   .ai-chatbot-dialog {
-    width: 80vw !important;
-    max-width: 1200px !important;
-    max-height: 85vh !important;
-    
-    .mat-mdc-dialog-container {
-      max-height: 85vh !important;
-      overflow-y: auto !important;
-      width: 100% !important;
-    }
-    
-    .mat-mdc-dialog-surface {
-      max-height: 85vh !important;
-      overflow-y: auto !important;
-      width: 100% !important;
-    }
-    
-    // Chat messages scrollable area
-    .overflow-y-auto, .chat-messages-scroll {
-      max-height: 500px !important;
-      min-height: 400px !important;
-      overflow-y: auto !important;
-    }
+    width: 88vw !important;
+    max-width: 1280px !important;
+    max-height: calc(100dvh - 20px) !important;
+    height: min(86vh, calc(100dvh - 20px)) !important;
   }
 }
 
@@ -1279,13 +1261,15 @@ input:user-invalid {
   .cdk-overlay-pane.ai-chatbot-dialog {
     width: 92vw !important;
     max-width: 92vw !important;
-    max-height: 85vh !important;
+    max-height: calc(100dvh - 12px) !important;
+    height: min(86vh, calc(100dvh - 12px)) !important;
   }
   
   .ai-chatbot-dialog {
     width: 92vw !important;
     max-width: 92vw !important;
-    max-height: 85vh !important;
+    max-height: calc(100dvh - 12px) !important;
+    height: min(86vh, calc(100dvh - 12px)) !important;
     
     .mat-mdc-dialog-container {
       width: 100% !important;

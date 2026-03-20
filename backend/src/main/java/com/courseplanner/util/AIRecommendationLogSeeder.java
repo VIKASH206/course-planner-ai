@@ -6,6 +6,7 @@ import com.courseplanner.repository.AIRecommendationLogRepository;
 import com.courseplanner.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ import java.util.Random;
  * Creates sample logs for demonstration
  */
 @Component
+@ConditionalOnProperty(name = "app.seed.sample-data", havingValue = "true")
 @Order(200)
 public class AIRecommendationLogSeeder implements CommandLineRunner {
 

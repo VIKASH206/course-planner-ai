@@ -25,6 +25,7 @@ import { TopicService } from '../../core/services/topic.service';
 import { NoteService } from '../../core/services/note.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { AIService } from '../../core/services/ai.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   CourseDetailsResponse,
   Module,
@@ -70,6 +71,7 @@ export class CourseDetailComponent implements OnInit {
   private noteService = inject(NoteService);
   private progressService = inject(ProgressService);
   private aiService = inject(AIService);
+  private authService = inject(AuthService);
 
   // Signals for reactive state management
   courseDetails = signal<CourseDetailsResponse | null>(null);
@@ -83,7 +85,7 @@ export class CourseDetailComponent implements OnInit {
   loadingAI = signal(false);
   
   courseId = signal<string>('');
-  private userIdSignal = signal<string>('user123'); // TODO: Get from auth service
+  private userIdSignal = signal<string>('');
   selectedModuleIndex = signal<number>(0);
   selectedTopicIndex = signal<number>(0);
 
@@ -105,6 +107,11 @@ export class CourseDetailComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const loggedInUserId = this.authService.currentUser()?.id;
+    if (loggedInUserId) {
+      this.userIdSignal.set(loggedInUserId);
+    }
+
     this.route.params.subscribe(params => {
       const id = params['id'];
       if (id) {

@@ -414,7 +414,7 @@ export class BrowseCoursesComponent implements OnInit {
             duration: rec.duration || rec.course?.duration || `${rec.estimatedTime || rec.course?.estimatedTime || 0} hours`,
             estimatedTime: (rec.estimatedTime || rec.course?.estimatedTime)?.toString(),
             lessons: rec.totalLessons || rec.course?.totalLessons || 0,
-            thumbnail: rec.imageUrl || rec.course?.imageUrl || 'https://via.placeholder.com/400x300/667eea/ffffff?text=AI+Recommended',
+            thumbnail: rec.imageUrl || rec.course?.imageUrl || '',
             rating: rec.rating || rec.course?.rating || 4.5,
             studentsCount: rec.studentsCount || rec.course?.studentsCount || 0,
             tags: rec.tags || rec.course?.tags || [],
@@ -437,7 +437,7 @@ export class BrowseCoursesComponent implements OnInit {
             duration: rec.course?.duration || rec.duration || `${rec.course?.estimatedTime || rec.estimatedTime || 0} hours`,
             estimatedTime: (rec.course?.estimatedTime || rec.estimatedTime)?.toString(),
             lessons: rec.course?.totalLessons || rec.totalLessons || 0,
-            thumbnail: rec.course?.imageUrl || rec.imageUrl || 'https://via.placeholder.com/400x300/667eea/ffffff?text=AI+Recommended',
+            thumbnail: rec.course?.imageUrl || rec.imageUrl || '',
             rating: rec.course?.rating || rec.rating || 4.5,
             studentsCount: rec.course?.studentsCount || rec.studentsCount || 0,
             tags: rec.course?.tags || rec.tags || [],
@@ -449,16 +449,16 @@ export class BrowseCoursesComponent implements OnInit {
           this.aiRecommendedCourses.set(recommendations);
           console.log(`✅ Loaded ${recommendations.length} AI recommendations (nested):`, recommendations);
         } else {
-          console.warn('⚠️ No AI recommendations found, loading smart fallback');
-          this.loadSmartFallbackRecommendations();
+          console.warn('⚠️ No AI recommendations found from backend');
+          this.aiRecommendedCourses.set([]);
         }
         this.loadingRecommendations.set(false);
       },
       error: (error: any) => {
-        // Silently handle API errors - use fallback recommendations
-        console.warn('⚠️ AI recommendation API unavailable, using smart fallback');
+        // No local mock fallback: keep recommendation list empty when API fails
+        console.warn('⚠️ AI recommendation API unavailable');
         this.loadingRecommendations.set(false);
-        this.loadSmartFallbackRecommendations();
+        this.aiRecommendedCourses.set([]);
       }
     });
   }
@@ -525,22 +525,9 @@ export class BrowseCoursesComponent implements OnInit {
     return '✨ Recommended based on your learning profile and goals';
   }
   
-  // Smart fallback recommendations when AI service is unavailable
+  // Production mode: do not fabricate recommendations locally.
   private loadSmartFallbackRecommendations() {
-    console.log('📊 Generating smart fallback recommendations...');
-    
-    // Generate intelligent fallback recommendations based on course content
-    const fallbackRecommendations = this.courses().slice(0, 6).map((course, index) => {
-      return {
-        ...course,
-        aiSuggested: true,
-        relevanceScore: 90 - (index * 5), // Decreasing scores for variety
-        reason: this.generateSmartReason(course)
-      };
-    });
-    
-    this.aiRecommendedCourses.set(fallbackRecommendations);
-    console.log('✅ Loaded smart fallback recommendations:', fallbackRecommendations);
+    this.aiRecommendedCourses.set([]);
   }
   
   loadMoreCourses() {
@@ -682,10 +669,10 @@ export class BrowseCoursesComponent implements OnInit {
   
   openAIChatbot(selectedCourse?: Course) {
     const dialogRef = this.dialog.open(AIChatbotComponent, {
-      width: '90vw',
-      maxWidth: '1000px',
-      height: '85vh',
-      maxHeight: '85vh',
+      width: '92vw',
+      maxWidth: '1180px',
+      height: '84vh',
+      maxHeight: 'calc(100dvh - 28px)',
       panelClass: 'ai-chatbot-dialog',
       data: { 
         context: 'browse-courses',

@@ -7,17 +7,45 @@ services:
     envVars:
       - key: MONGODB_URI
         sync: false
-      - key: GEMINI_API_KEY
+      - key: GROQ_API_KEY
         sync: false
-      - key: EMAIL_USERNAME
+      - key: GROQ_API_URL
         sync: false
-      - key: EMAIL_PASSWORD
+      - key: GROQ_API_MODEL
         sync: false
-      - key: JWT_SECRET
-        generateValue: true
-      - key: PORT
-        value: 8080
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_SEED_SAMPLE_DATA
+        value: "false"
+      - key: APP_DB_CLEANUP_ENABLED
+        value: "false"
+      - key: LOGGING_LEVEL_COM_COURSEPLANNER
+        value: INFO
+      - key: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_MONGODB
+        value: INFO
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+      - key: SPRING_MAIL_ENABLED
+        value: "true"
+      - key: SPRING_APPLICATION_NAME
+        value: Course Planner AI Backend
+      - key: SPRING_DATA_MONGODB_DATABASE
+        value: courseplannerDB
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      - key: PORT
+        value: 8080
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SENDGRID_SENDER_EMAIL
+        sync: false
     healthCheckPath: /api/courses
     autoDeploy: true

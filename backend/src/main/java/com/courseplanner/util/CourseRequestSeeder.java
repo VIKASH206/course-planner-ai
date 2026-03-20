@@ -4,6 +4,7 @@ import com.courseplanner.model.CourseRequest;
 import com.courseplanner.repository.CourseRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.List;
  * ⚠️ ENABLED: This will seed sample course requests on first run
  */
 @Component
+@ConditionalOnProperty(name = "app.seed.sample-data", havingValue = "true")
 public class CourseRequestSeeder implements CommandLineRunner {
 
     @Autowired

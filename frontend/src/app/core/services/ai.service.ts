@@ -13,7 +13,7 @@ import {
   providedIn: 'root'
 })
 export class AIService {
-  private readonly baseUrl = `${environment.apiUrl}/api/ai`;
+  private readonly baseUrl = `${environment.apiUrl}/ai`;
 
   constructor(private http: HttpClient) {}
 
@@ -22,6 +22,16 @@ export class AIService {
     return this.http.post<ApiResponse<ChatMessage>>(`${this.baseUrl}/chat/course/${courseId}`, {
       message: message,
       userId: userId
+    });
+  }
+
+  // General AI chat for non-course-specific context (e.g., Browse Courses page)
+  chatGeneral(message: string, context: string, userId?: string, language: string = 'auto'): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/chat`, {
+      message,
+      context,
+      userId,
+      language
     });
   }
 

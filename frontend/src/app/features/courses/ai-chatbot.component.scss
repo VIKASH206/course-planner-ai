@@ -240,3 +240,18 @@
     stroke: white;
   }
 }
+
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.chat-messages-scroll {
+  min-height: 0;
+}
+
+.quick-suggestions-panel {
+  max-height: 180px;
+  overflow-y: auto;
+}

@@ -4,6 +4,7 @@ import com.courseplanner.model.BrowseCourse;
 import com.courseplanner.repository.BrowseCourseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
+@ConditionalOnProperty(name = "app.seed.sample-data", havingValue = "true")
 public class CourseDataInitializer implements CommandLineRunner {
 
     @Autowired

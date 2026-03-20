@@ -128,6 +128,12 @@ const INTENT_PATTERNS: IntentPattern[] = [
               </p>
             </div>
           </div>
+          <div class="header-actions">
+            <button type="button" class="clear-chat-btn" (click)="clearChat()" [disabled]="isTyping()">
+              <mat-icon>delete_sweep</mat-icon>
+              <span>Clear Chat</span>
+            </button>
+          </div>
         </div>
 
         <!-- Chat Messages Area -->
@@ -235,6 +241,13 @@ const INTENT_PATTERNS: IntentPattern[] = [
         <!-- Modern Input Area -->
         <div class="chat-input-area">
           <form (ngSubmit)="sendMessage()" class="input-form">
+            <div class="language-row">
+              <label for="chatLanguage" class="language-label">Response Language</label>
+              <select id="chatLanguage" class="language-select" [(ngModel)]="selectedLanguage" name="chatLanguage">
+                <option *ngFor="let option of languageOptions" [value]="option.value">{{ option.label }}</option>
+              </select>
+            </div>
+
             <div class="input-wrapper">
               <button type="button" 
                       mat-icon-button 
@@ -380,12 +393,52 @@ const INTENT_PATTERNS: IntentPattern[] = [
       border: 1px solid rgba(255, 255, 255, 0.2);
       padding: 24px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
     .header-content {
       display: flex;
       align-items: center;
       gap: 16px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .clear-chat-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(15, 23, 42, 0.28);
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: rgba(15, 23, 42, 0.48);
+        transform: translateY(-1px);
+      }
+
+      &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      mat-icon {
+        width: 18px;
+        height: 18px;
+        font-size: 18px;
+      }
     }
 
     .ai-avatar-large {
@@ -748,6 +801,37 @@ const INTENT_PATTERNS: IntentPattern[] = [
       gap: 12px;
     }
 
+    .language-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 4px;
+    }
+
+    .language-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .language-select {
+      min-width: 160px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 13px;
+      color: #111827;
+      background: #fff;
+      outline: none;
+    }
+
+    .language-select:focus {
+      border-color: #667eea;
+    }
+
     .input-wrapper {
       display: flex;
       align-items: flex-end;
@@ -874,6 +958,15 @@ const INTENT_PATTERNS: IntentPattern[] = [
         padding: 16px;
       }
 
+      .clear-chat-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+
+        span {
+          display: none;
+        }
+      }
+
       .chat-messages {
         padding: 16px;
       }
@@ -929,6 +1022,22 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     'Create study plan',
     'Give me a quiz'
   ];
+
+  languageOptions = [
+    { value: 'auto', label: 'Auto (Same as user)' },
+    { value: 'English', label: 'English' },
+    { value: 'Hindi', label: 'Hindi' },
+    { value: 'Hinglish', label: 'Hinglish' },
+    { value: 'Spanish', label: 'Spanish' },
+    { value: 'French', label: 'French' },
+    { value: 'German', label: 'German' },
+    { value: 'Arabic', label: 'Arabic' },
+    { value: 'Japanese', label: 'Japanese' },
+    { value: 'Korean', label: 'Korean' },
+    { value: 'Chinese', label: 'Chinese' }
+  ];
+
+  selectedLanguage = 'auto';
 
   ngOnInit() {
     // Auto-focus on input
@@ -1004,6 +1113,18 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
+  clearChat() {
+    this.isTyping.set(false);
+    this.messages.set([]);
+    this.suggestions = [
+      'Show available courses',
+      'My progress status',
+      'Create study plan',
+      'Give me a quiz'
+    ];
+    this.addWelcomeMessage();
+    this.shouldScrollToBottom = true;
+  }
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
@@ -1067,7 +1188,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     // Send to AI service with detected intent and context
-    this.apiService.sendAIMessage(messageText, contextualPrompt, userId)
+    this.apiService.sendAIMessage(messageText, contextualPrompt, userId, this.selectedLanguage)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {

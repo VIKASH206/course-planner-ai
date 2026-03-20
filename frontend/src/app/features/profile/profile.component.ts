@@ -1010,13 +1010,23 @@ export class ProfileComponent implements OnInit {
     this.currentMessage = '';
     this.isTyping.set(true);
 
+    const currentUserId = this.authService.currentUser()?.id;
+    const profile = this.profileData();
+    const context = [
+      'Page: profile-ai-assistant',
+      `User Name: ${profile.name || 'Student'}`,
+      `User Interests: ${(profile.interests && profile.interests.length > 0) ? profile.interests.join(', ') : 'Not provided'}`,
+      'Response format: Short, professional, point-wise.',
+      'Use 3-6 bullets max, no long paragraphs, no emojis.'
+    ].join('\n');
+
     // Send to AI service with project relevance filtering
-    this.apiService.sendMessage(messageText).subscribe({
+    this.apiService.sendAIMessage(messageText, context, currentUserId, 'auto').subscribe({
       next: (response) => {
         this.isTyping.set(false);
         const botMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
-          text: response.data.response,
+          text: this.formatPointwiseResponse(response.data.response),
           sender: 'bot',
           timestamp: new Date(),
           showMeetAdmin: response.data.showMeetAdmin,
@@ -1038,6 +1048,50 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  private formatPointwiseResponse(rawText: string): string {
+    const text = (rawText || '').trim();
+    if (!text) {
+      return '• I could not generate a response right now.\n• Please try again.';
+    }
+
+    const cleaned = text
+      .replace(/\*\*/g, '')
+      .replace(/^#+\s*/gm, '')
+      .replace(/^[*-]\s+/gm, '• ')
+      .replace(/^\d+\)\s+/gm, '• ')
+      .replace(/^\d+\.\s+/gm, '• ')
+      .trim();
+
+    // If model already returned bullets/numbered points, keep compact as-is.
+    if (/^\s*([\-•\*]|\d+[.)])\s+/m.test(cleaned)) {
+      const lines = cleaned
+        .split(/\n+/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .slice(0, 7);
+      return lines.join('\n');
+    }
+
+    // Convert long paragraph output into concise point-wise response.
+    const sentences = cleaned
+      .split(/(?<=[.!?])\s+/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .slice(0, 6);
+
+    if (sentences.length === 0) {
+      return text;
+    }
+
+    return sentences.map(s => `• ${s}`).join('\n');
+  }
+
+  clearProfileChat() {
+    this.chatMessages.set([]);
+    this.currentMessage = '';
+    this.isTyping.set(false);
+  }
+
   sendQuickMessage(message: string) {
     this.currentMessage = message;
     this.sendMessage();
@@ -1055,150 +1109,12 @@ export class ProfileComponent implements OnInit {
     this.router.navigate([route]);
   }
 
-  private generateAIResponse(userMessage: string): { text: string; type?: ChatMessage['type'] } {
-    const message = userMessage.toLowerCase();
-    const profile = this.profileData();
-    const stats = this.profileStats();
-
-    // Personal Progress Queries
-    if (message.includes('progress') || message.includes('completed') || message.includes('course')) {
-      return {
-        text: `Great question! Based on your profile, you've completed ${stats.coursesCompleted} courses and have ${stats.studyHours} study hours. You're currently at level ${profile.level} with ${stats.xpPoints} XP points. Keep up the excellent work! 🎓`,
-        type: 'progress'
-      };
-    }
-
-    if (message.includes('weak') || message.includes('subject') || message.includes('difficult')) {
-      return {
-        text: `Based on your study patterns, I'd recommend focusing more on areas where you spend less time. Consider reviewing your recent tasks and identifying subjects with lower completion rates. Would you like me to suggest a focused study plan? 📚`,
-        type: 'recommendation'
-      };
-    }
-
-    if (message.includes('week') || message.includes('this week')) {
-      return {
-        text: `This week you've maintained a ${profile.streak}-day study streak! 🔥 You've completed several tasks and are making steady progress. Your consistency is impressive - keep building on this momentum!`,
-        type: 'progress'
-      };
-    }
-
-    // Study Recommendations
-    if (message.includes('study today') || message.includes('what should i study') || message.includes('recommend')) {
-      const recommendations = [
-        'Review your pending assignments first - deadlines are important! ⏰',
-        'Based on your interests in ' + (profile.skills?.[0] || 'your subjects') + ', I suggest focusing on practical exercises.',
-        'Consider taking a short quiz to test your recent learning, then dive into new material.',
-        'Since you\'re doing well, try tackling a challenging topic to expand your knowledge!'
-      ];
-      return {
-        text: recommendations[Math.floor(Math.random() * recommendations.length)],
-        type: 'recommendation'
-      };
-    }
-
-    if (message.includes('study plan') || message.includes('schedule') || message.includes('plan')) {
-      return {
-        text: `Here's a personalized study plan for you:\n\n🌅 Morning (9-11 AM): Focus on challenging subjects\n🌞 Afternoon (2-4 PM): Review and practice\n🌙 Evening (7-8 PM): Light reading or revision\n\nAdjust based on your energy levels and preferences!`,
-        type: 'recommendation'
-      };
-    }
-
-    // Task & Reminder Help
-    if (message.includes('deadline') || message.includes('due') || message.includes('upcoming')) {
-      return {
-        text: `⏰ Based on your current pace, you have several tasks approaching. I recommend prioritizing the ones due this week. Don't worry - you're typically great at meeting deadlines! Need help organizing your tasks?`,
-        type: 'reminder'
-      };
-    }
-
-    if (message.includes('remind') || message.includes('notification')) {
-      return {
-        text: `I can help you stay on track! Based on your profile, I suggest study reminders at 9 AM and 3 PM on weekdays. You can customize these in your profile settings. Would you like me to set up smart reminders? 🔔`,
-        type: 'reminder'
-      };
-    }
-
-    // Content Assistance
-    if (message.includes('quiz') || message.includes('test') || message.includes('revision')) {
-      const subjects = profile.skills || ['JavaScript', 'TypeScript', 'Angular'];
-      const randomSubject = subjects[Math.floor(Math.random() * subjects.length)];
-      return {
-        text: `🧠 Quick ${randomSubject} Quiz:\n\nQ: What's the main advantage of using TypeScript over JavaScript?\nA) Better performance\nB) Type safety\nC) Smaller file size\n\nThink about it and let me know your answer! I can generate more quizzes on any subject you're studying.`,
-        type: 'general'
-      };
-    }
-
-    if (message.includes('explain') || message.includes('help with') || message.includes('understand')) {
-      return {
-        text: `I'd love to help explain concepts! While I can't access your specific notes right now, I can help break down topics, provide examples, and suggest learning resources. What specific topic would you like me to explain? 🤔`,
-        type: 'general'
-      };
-    }
-
-    // Motivation & Engagement
-    if (message.includes('motivat') || message.includes('encourage') || message.includes('tired')) {
-      const motivationalMessages = [
-        `You're doing amazing! 🌟 Your ${profile.streak}-day streak shows real dedication. Every expert was once a beginner!`,
-        `Remember why you started! 💪 You've already completed ${stats.coursesCompleted} courses - that's incredible progress!`,
-        `Take a short break if you need it, then come back stronger! 🚀 Consistent small steps lead to big achievements.`,
-        `You're at level ${profile.level} - that didn't happen by accident! You have what it takes to keep growing! ✨`
-      ];
-      return {
-        text: motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)],
-        type: 'general'
-      };
-    }
-
-    if (message.includes('leaderboard') || message.includes('position') || message.includes('ranking')) {
-      return {
-        text: `🏆 You're doing great! With ${stats.xpPoints} XP points and level ${profile.level}, you're in the top performers this week! Your consistent ${profile.streak}-day streak is inspiring others. Keep it up!`,
-        type: 'progress'
-      };
-    }
-
-    // Profile Management Help
-    if (message.includes('bio') || message.includes('profile') || message.includes('update')) {
-      return {
-        text: `I can help you optimize your profile! 👤 Your current bio looks good. Consider adding more about your learning goals or recent achievements. You can update your bio, skills, and preferences using the Edit Profile button above!`,
-        type: 'general'
-      };
-    }
-
-    if (message.includes('setting') || message.includes('notification') || message.includes('preference')) {
-      return {
-        text: `⚙️ Based on your study patterns, I suggest:\n• Study reminders at 9 AM (your most active time)\n• Weekly progress reports on Sundays\n• Achievement notifications enabled\n\nYou can customize these in your profile settings!`,
-        type: 'recommendation'
-      };
-    }
-
-    // General responses
-    if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
-      return {
-        text: `Hello ${profile.firstName || 'there'}! 👋 I'm your AI Study Assistant. I can help you track progress, get study recommendations, manage tasks, and stay motivated. What would you like to know about your learning journey?`,
-        type: 'general'
-      };
-    }
-
-    if (message.includes('thanks') || message.includes('thank you')) {
-      return {
-        text: `You're very welcome! 😊 I'm here to support your learning journey. Feel free to ask me anything about your studies, progress, or need motivation anytime!`,
-        type: 'general'
-      };
-    }
-
-    // Default response
-    return {
-      text: `I understand you're asking about "${userMessage}". I can help with:\n\n📊 Progress tracking\n📚 Study recommendations\n⏰ Deadline reminders\n🧠 Quiz generation\n💪 Motivation & tips\n👤 Profile optimization\n\nWhat specific area interests you most?`,
-      type: 'general'
-    };
-  }
-
   openAIChat(type?: string) {
-    // This method is kept for compatibility but now the chat is integrated
-    const welcomeMessage = type ? 
-      `Welcome to ${type} assistance! How can I help you today?` :
-      'Hi! I\'m your AI Study Assistant. What would you like to know?';
-    
+    // Compatibility method for older triggers; uses integrated chat flow.
+    const welcomeMessage = type
+      ? `Please help me with ${type}.`
+      : 'Please help me with my study progress.';
+
     this.sendQuickMessage(welcomeMessage);
   }
 

@@ -3,6 +3,7 @@ package com.courseplanner.controller;
 import com.courseplanner.dto.ApiResponse;
 import com.courseplanner.model.EnrolledCourse;
 import com.courseplanner.service.EnrollmentService;
+import com.courseplanner.repository.BrowseCourseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,9 @@ public class EnrollmentController {
     
     @Autowired
     private com.courseplanner.service.CourseService courseService;
+
+    @Autowired
+    private BrowseCourseRepository browseCourseRepository;
 
     /**
      * Enroll user in a course
@@ -78,25 +82,51 @@ public class EnrollmentController {
                 enrichedData.put("courseTitle", enrollment.getCourseTitle());
                 enrichedData.put("courseCategory", enrollment.getCourseCategory());
                 enrichedData.put("courseDifficulty", enrollment.getCourseDifficulty());
+                enrichedData.put("courseThumbnail", enrollment.getCourseThumbnail());
+                enrichedData.put("courseImageUrl", enrollment.getCourseImageUrl());
                 enrichedData.put("progressPercentage", enrollment.getProgressPercentage());
                 enrichedData.put("isCompleted", enrollment.isCompleted());
                 enrichedData.put("enrolledAt", enrollment.getEnrolledAt());
                 enrichedData.put("completedAt", enrollment.getCompletedAt());
                 
-                // Try to get course thumbnail
-                try {
-                    com.courseplanner.model.Course course = courseService.getCourseById(enrollment.getCourseId());
-                    System.out.println("   📸 Course found: " + (course != null ? "YES" : "NO"));
-                    if (course != null) {
-                        System.out.println("   🖼️ Thumbnail: " + course.getThumbnail());
-                        enrichedData.put("courseThumbnail", course.getThumbnail());
-                    } else {
-                        System.out.println("   ❌ Course not found for ID: " + enrollment.getCourseId());
-                        enrichedData.put("courseThumbnail", null);
+                // Backfill image/title/category/difficulty for legacy enrollments that don't have these stored.
+                String existingThumbnail = enrollment.getCourseThumbnail();
+                String existingImageUrl = enrollment.getCourseImageUrl();
+                boolean missingImage = (existingThumbnail == null || existingThumbnail.isBlank())
+                        && (existingImageUrl == null || existingImageUrl.isBlank());
+
+                if (missingImage) {
+                    try {
+                        // Prefer browse_courses because this endpoint is primarily used by Browse Courses enrollment flow.
+                        var browseCourseOpt = browseCourseRepository.findById(enrollment.getCourseId());
+                        if (browseCourseOpt.isPresent()) {
+                            var browseCourse = browseCourseOpt.get();
+                            String browseImage = browseCourse.getImageUrl();
+                            if (browseImage != null && !browseImage.isBlank()) {
+                                enrichedData.put("courseThumbnail", browseImage);
+                                enrichedData.put("courseImageUrl", browseImage);
+                            }
+
+                            if ((enrollment.getCourseTitle() == null || enrollment.getCourseTitle().isBlank()) && browseCourse.getTitle() != null) {
+                                enrichedData.put("courseTitle", browseCourse.getTitle());
+                            }
+                            if ((enrollment.getCourseCategory() == null || enrollment.getCourseCategory().isBlank()) && browseCourse.getCategory() != null) {
+                                enrichedData.put("courseCategory", browseCourse.getCategory());
+                            }
+                            if ((enrollment.getCourseDifficulty() == null || enrollment.getCourseDifficulty().isBlank()) && browseCourse.getDifficulty() != null) {
+                                enrichedData.put("courseDifficulty", browseCourse.getDifficulty());
+                            }
+                        } else {
+                            // Fallback: legacy user-created course collection
+                            com.courseplanner.model.Course course = courseService.getCourseById(enrollment.getCourseId());
+                            if (course != null && course.getThumbnail() != null && !course.getThumbnail().isBlank()) {
+                                enrichedData.put("courseThumbnail", course.getThumbnail());
+                                enrichedData.put("courseImageUrl", course.getThumbnail());
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.out.println("   ⚠️ Error backfilling enrollment image: " + e.getMessage());
                     }
-                } catch (Exception e) {
-                    System.out.println("   ⚠️ Error getting thumbnail: " + e.getMessage());
-                    enrichedData.put("courseThumbnail", null);
                 }
                 
                 enrichedEnrollments.add(enrichedData);

@@ -41,29 +41,7 @@ export class CourseDetailDialogComponent implements OnInit {
   loadingRelated = signal(false);
   enrolling = signal(false);
   
-  // Mock syllabus data
-  syllabus = [
-    {
-      module: 'Introduction',
-      topics: ['Getting Started', 'Setup Environment', 'Basic Concepts'],
-      duration: '2 hours'
-    },
-    {
-      module: 'Core Concepts',
-      topics: ['Fundamentals', 'Best Practices', 'Hands-on Projects'],
-      duration: '8 hours'
-    },
-    {
-      module: 'Advanced Topics',
-      topics: ['Advanced Techniques', 'Real-world Applications', 'Case Studies'],
-      duration: '6 hours'
-    },
-    {
-      module: 'Final Project',
-      topics: ['Project Planning', 'Implementation', 'Review & Feedback'],
-      duration: '4 hours'
-    }
-  ];
+  syllabus: Array<{ module: string; topics: string[]; duration: string }> = [];
   
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { course: Course, userId: string },
@@ -76,8 +54,45 @@ export class CourseDetailDialogComponent implements OnInit {
   }
   
   ngOnInit() {
+    this.syllabus = this.buildSyllabusFromCourse();
     this.loadAISummary();
     this.loadRelatedCourses();
+  }
+
+  private buildSyllabusFromCourse(): Array<{ module: string; topics: string[]; duration: string }> {
+    const totalHours = parseInt(this.course.estimatedTime || '20', 10);
+    const safeHours = Number.isFinite(totalHours) && totalHours > 0 ? totalHours : 20;
+
+    const prerequisites = (this.course.prerequisites || []).slice(0, 4);
+    const objectives = (this.course.objectives || []).slice(0, 4);
+    const tags = (this.course.tags || []).slice(0, 6);
+
+    return [
+      {
+        module: 'Course Overview',
+        topics: [
+          this.course.title,
+          `Category: ${this.course.category}`,
+          `Difficulty: ${this.course.difficulty}`
+        ],
+        duration: `${Math.max(1, Math.round(safeHours * 0.15))} hours`
+      },
+      {
+        module: 'Prerequisites',
+        topics: prerequisites.length > 0 ? prerequisites : ['No prerequisites specified'],
+        duration: `${Math.max(1, Math.round(safeHours * 0.15))} hours`
+      },
+      {
+        module: 'Core Learning Outcomes',
+        topics: objectives.length > 0 ? objectives : ['Learning outcomes will be provided by the instructor'],
+        duration: `${Math.max(1, Math.round(safeHours * 0.5))} hours`
+      },
+      {
+        module: 'Practice and Applications',
+        topics: tags.length > 0 ? tags.map(tag => `Hands-on with ${tag}`) : ['Practice exercises and applied projects'],
+        duration: `${Math.max(1, Math.round(safeHours * 0.2))} hours`
+      }
+    ];
   }
   
   loadAISummary() {

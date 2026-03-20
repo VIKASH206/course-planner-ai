@@ -45,7 +45,9 @@ public class BrowseCourseService {
         
         // Create pageable with sorting
         Sort sort = createSort(sortBy);
-        Pageable pageable = PageRequest.of(page - 1, size, sort); // Frontend uses 1-based indexing
+        int safePage = Math.max(1, page);
+        int safeSize = Math.max(1, size);
+        Pageable pageable = PageRequest.of(safePage - 1, safeSize, sort); // Frontend uses 1-based indexing
         
         Page<BrowseCourse> courses;
         
@@ -63,6 +65,12 @@ public class BrowseCourseService {
             courses = browseCourseRepository.findByDifficultyAndIsPublished(level, true, pageable);
         } else {
             courses = browseCourseRepository.findByIsPublished(true, pageable);
+
+            // Backward compatibility: if older records don't have isPublished=true,
+            // return all courses so Browse Courses does not appear empty.
+            if (courses.getTotalElements() == 0) {
+                courses = browseCourseRepository.findAll(pageable);
+            }
         }
         
         // Apply duration filter if specified

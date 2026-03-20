@@ -9,6 +9,7 @@ import com.courseplanner.dto.PasswordResetResponse;
 import com.courseplanner.model.User;
 import com.courseplanner.security.CustomUserDetailsService;
 import com.courseplanner.service.EmailService;
+import com.courseplanner.service.FirebaseAuthService;
 import com.courseplanner.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,9 @@ public class AuthController {
     
     @Autowired
     private com.courseplanner.service.UserService userService;
+
+    @Autowired
+    private FirebaseAuthService firebaseAuthService;
 
     /**
      * POST /api/auth/login
@@ -350,21 +354,30 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(@RequestBody GoogleAuthRequest googleAuthRequest, HttpServletRequest request) {
         try {
-            logger.info("🔐 Google OAuth login attempt for email: {}", googleAuthRequest.getEmail());
-            
-            // Validate Google auth request
-            if (googleAuthRequest.getEmail() == null || googleAuthRequest.getEmail().trim().isEmpty()) {
+            if (googleAuthRequest.getGoogleToken() == null || googleAuthRequest.getGoogleToken().trim().isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Email is required for Google authentication"));
+                        .body(ApiResponse.error("Firebase ID token is required for Google authentication"));
             }
-            
-            if (googleAuthRequest.getGoogleId() == null || googleAuthRequest.getGoogleId().trim().isEmpty()) {
+
+            FirebaseAuthService.VerifiedFirebaseUser decodedToken = firebaseAuthService.verifyIdToken(googleAuthRequest.getGoogleToken());
+            String email = decodedToken.getEmail();
+            if (email == null || email.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Google ID is required"));
+                        .body(ApiResponse.error("Verified Google account does not contain an email"));
             }
-            
-            String email = googleAuthRequest.getEmail().trim().toLowerCase();
-            String googleId = googleAuthRequest.getGoogleId();
+
+            if (!decodedToken.isEmailVerified()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("Google email is not verified"));
+            }
+
+            String googleId = decodedToken.getUid();
+            String displayName = decodedToken.getName();
+            String profilePicture = decodedToken.getPicture();
+
+            logger.info("🔐 Google Firebase login attempt for verified email: {}", email);
+
+            email = email.trim().toLowerCase();
             
             // Check if user exists by email or Google ID
             Optional<User> existingUser = userRepository.findByEmailIgnoreCase(email);
@@ -380,6 +393,9 @@ public class AuthController {
                     user.setGoogleId(googleId);
                     user.setAuthProvider("GOOGLE");
                     logger.info("Updated existing user with Google OAuth info");
+                } else if (!googleId.equals(user.getGoogleId())) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(ApiResponse.error("Google account does not match existing user mapping"));
                 }
                 
                 // OAuth users are automatically verified
@@ -388,10 +404,10 @@ public class AuthController {
                 }
                 
                 // Update profile picture if provided and not already set
-                if (googleAuthRequest.getProfilePicture() != null && 
-                    !googleAuthRequest.getProfilePicture().isEmpty() &&
+                if (profilePicture != null && 
+                    !profilePicture.isEmpty() &&
                     (user.getProfilePicture() == null || user.getProfilePicture().isEmpty())) {
-                    user.setProfilePicture(googleAuthRequest.getProfilePicture());
+                    user.setProfilePicture(profilePicture);
                 }
                 
                 user.setLastLogin(java.time.LocalDateTime.now());
@@ -404,9 +420,16 @@ public class AuthController {
                 user.setEmail(email);
                 user.setGoogleId(googleId);
                 user.setAuthProvider("GOOGLE");
-                user.setFirstName(googleAuthRequest.getFirstName());
-                user.setLastName(googleAuthRequest.getLastName());
-                user.setProfilePicture(googleAuthRequest.getProfilePicture());
+                String firstName = googleAuthRequest.getFirstName();
+                String lastName = googleAuthRequest.getLastName();
+                if ((firstName == null || firstName.isBlank()) && displayName != null && !displayName.isBlank()) {
+                    String[] parts = displayName.trim().split("\\s+", 2);
+                    firstName = parts[0];
+                    lastName = parts.length > 1 ? parts[1] : "";
+                }
+                user.setFirstName(firstName != null ? firstName : "User");
+                user.setLastName(lastName != null ? lastName : "");
+                user.setProfilePicture(profilePicture != null ? profilePicture : googleAuthRequest.getProfilePicture());
                 user.setRole("STUDENT"); // Default role
                 user.setOnboardingCompleted(false); // New users need onboarding
                 
@@ -462,6 +485,10 @@ public class AuthController {
             logger.info("✅ Google OAuth login successful for: {}", user.getEmail());
             return ResponseEntity.ok(ApiResponse.success("Google login successful", response));
             
+        } catch (IllegalArgumentException e) {
+            logger.error("✗ Firebase token verification failed during Google OAuth login", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Invalid or expired Firebase token"));
         } catch (Exception e) {
             logger.error("✗ ERROR during Google OAuth login: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

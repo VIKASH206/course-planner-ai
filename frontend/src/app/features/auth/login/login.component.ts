@@ -1,5 +1,5 @@
-import { Component, OnInit, AfterViewInit, signal, Inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,12 +11,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/auth-backend.service';
 import { BackendApiService } from '../../../core/services/backend-api.service';
-import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { environment } from '../../../../environments/environment';
 import { AuthService as MainAuthService } from '../../../core/services/auth.service';
-
-// Declare Google Identity Services
-declare const google: any;
+import { getFirebaseApp } from '../../../core/config/firebase.config';
+import { GoogleAuthProvider, getAuth, signInWithPopup } from 'firebase/auth';
 
 @Component({
   selector: 'app-login',
@@ -32,17 +30,15 @@ declare const google: any;
     MatIconModule,
     MatCheckboxModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
-    ThemeToggleComponent
+    MatSnackBarModule
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'] // ✅ corrected (plural)
 })
-export class LoginComponent implements OnInit, AfterViewInit {
+export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   hidePassword = signal(true);
   isLoading = signal(false);
-  googleButtonRendered = false;
   showResendButton = signal(false);
   resendEmail = signal('');
   serverStatus = signal<'checking' | 'ready' | 'starting'>('checking');
@@ -54,8 +50,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     private backendApi: BackendApiService,
     private router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar,
-    @Inject(PLATFORM_ID) private platformId: Object
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
@@ -85,16 +80,6 @@ export class LoginComponent implements OnInit, AfterViewInit {
         );
       }
     });
-  }
-
-  ngAfterViewInit() {
-    // Initialize Google Sign-In after view is fully loaded
-    if (isPlatformBrowser(this.platformId)) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        this.initializeGoogleSignIn();
-      }, 500);
-    }
   }
 
   private createForm() {
@@ -231,149 +216,87 @@ export class LoginComponent implements OnInit, AfterViewInit {
     });
   }
 
-  initializeGoogleSignIn() {
-    // Wait for Google Identity Services script to load
-    const checkGoogleLoaded = setInterval(() => {
-      if (typeof google !== 'undefined' && google.accounts) {
-        clearInterval(checkGoogleLoaded);
-        this.setupGoogleSignIn();
-      }
-    }, 100);
-
-    // Timeout after 10 seconds
-    setTimeout(() => clearInterval(checkGoogleLoaded), 10000);
-  }
-
-  setupGoogleSignIn() {
-    try {
-      google.accounts.id.initialize({
-        client_id: environment.googleClientId,
-        callback: this.handleGoogleSignIn.bind(this),
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        ux_mode: 'popup'  // Force popup mode for account picker
-      });
-
-      // Render the button if container exists
-      const buttonContainer = document.getElementById('googleSignInButton');
-      if (buttonContainer && !this.googleButtonRendered) {
-        // Clear any existing content
-        buttonContainer.innerHTML = '';
-        
-        google.accounts.id.renderButton(
-          buttonContainer,
-          {
-            theme: 'outline',
-            size: 'large',
-            width: buttonContainer.offsetWidth || 350,
-            text: 'continue_with',
-            shape: 'rectangular',
-            logo_alignment: 'left'
-          }
-        );
-        this.googleButtonRendered = true;
-        console.log('✅ Google Sign-In button rendered successfully');
-      }
-      
-      // Also enable One Tap prompt
-      google.accounts.id.prompt((notification: any) => {
-        console.log('One Tap notification:', notification);
-      });
-    } catch (error) {
-      console.error('Error setting up Google Sign-In:', error);
-    }
-  }
-
-  handleGoogleSignIn(response: any) {
+  private authenticateWithGoogle() {
     this.isLoading.set(true);
-    console.log('🔐 Google Sign-In response received');
+    console.log('🔐 Firebase Google Sign-In started');
 
     try {
-      // Decode JWT to get user info
-      const payload = this.parseJwt(response.credential);
-      console.log('📧 Google user data:', payload);
+      if (typeof window === 'undefined') {
+        throw new Error('Google sign-in is only available in browser');
+      }
 
-      // Call backend with Google data
-      this.authService.loginWithGoogle(payload).subscribe({
-        next: (user: any) => {
-          console.log('✅ Backend response received, user:', user);
-          this.isLoading.set(false);
-          
-          this.snackBar.open(`Welcome, ${user.firstName}!`, 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
+      if (!environment.firebase?.apiKey || !environment.firebase?.projectId) {
+        throw new Error('Firebase is not configured. Please set frontend environment firebase keys.');
+      }
 
-          console.log('🚀 Navigating to dashboard, user role:', user.role);
+      const app = getFirebaseApp(environment.firebase);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
 
-          // Role-based redirect with replaceUrl to prevent back button issues
-          if (user.role === 'ADMIN') {
-            console.log('👑 Admin user, redirecting to admin dashboard');
-            this.router.navigate(['/admin/dashboard'], { replaceUrl: true });
-          } else {
-            console.log('👤 Student user, checking onboarding status');
-            // Check onboarding status for new users
-            this.backendApi.checkOnboardingStatus(user.id).subscribe({
-              next: (response: any) => {
-                if (response.success && response.data === false) {
-                  console.log('📝 User needs onboarding, redirecting to onboarding');
-                  this.router.navigate(['/onboarding'], { replaceUrl: true });
-                } else {
-                  console.log('🏠 User completed onboarding, redirecting to dashboard');
-                  this.router.navigate(['/dashboard'], { replaceUrl: true });
-                }
-              },
-              error: () => {
-                console.log('⚠️ Onboarding check failed, defaulting to dashboard');
-                this.router.navigate(['/dashboard'], { replaceUrl: true });
+      signInWithPopup(auth, provider)
+        .then(async (credential) => {
+          const firebaseUser = credential.user;
+          const idToken = await firebaseUser.getIdToken();
+
+          this.authService.loginWithGoogle(firebaseUser, idToken).subscribe({
+            next: (user: any) => {
+              console.log('✅ Backend response received, user:', user);
+              this.isLoading.set(false);
+
+              this.snackBar.open(`Welcome, ${user.firstName}!`, 'Close', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+              });
+
+              if (user.role === 'ADMIN') {
+                this.router.navigate(['/admin/dashboard'], { replaceUrl: true });
+              } else {
+                this.backendApi.checkOnboardingStatus(user.id).subscribe({
+                  next: (response: any) => {
+                    if (response.success && response.data === false) {
+                      this.router.navigate(['/onboarding'], { replaceUrl: true });
+                    } else {
+                      this.router.navigate(['/dashboard'], { replaceUrl: true });
+                    }
+                  },
+                  error: () => {
+                    this.router.navigate(['/dashboard'], { replaceUrl: true });
+                  }
+                });
               }
-            });
-          }
-        },
-        error: (error: any) => {
+            },
+            error: (error: any) => {
+              this.isLoading.set(false);
+              console.error('❌ Google login error:', error);
+              this.snackBar.open(error.message || 'Google login failed. Please try again.', 'Close', {
+                duration: 4000,
+                panelClass: ['error-snackbar']
+              });
+            }
+          });
+        })
+        .catch((error) => {
           this.isLoading.set(false);
-          console.error('❌ Google login error:', error);
-          this.snackBar.open(error.message || 'Google login failed. Please try again.', 'Close', {
+          console.error('❌ Firebase popup failed:', error);
+          this.snackBar.open('Google sign-in failed. Please try again.', 'Close', {
             duration: 4000,
             panelClass: ['error-snackbar']
           });
-        }
-      });
+        });
     } catch (error) {
       this.isLoading.set(false);
-      console.error('❌ Error processing Google Sign-In:', error);
-      this.snackBar.open('Failed to process Google Sign-In. Please try again.', 'Close', {
+      console.error('❌ Error starting Google Sign-In:', error);
+      this.snackBar.open('Failed to start Google sign-in. Please try again.', 'Close', {
         duration: 4000,
         panelClass: ['error-snackbar']
       });
     }
   }
 
-  parseJwt(token: string): any {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('Error parsing JWT:', error);
-      return null;
-    }
-  }
-
   socialLogin(provider: string) {
     if (provider === 'Google') {
-      // Trigger Google Sign-In popup
-      if (typeof google !== 'undefined' && google.accounts) {
-        google.accounts.id.prompt();
-      } else {
-        this.snackBar.open('Google Sign-In not loaded. Please refresh the page.', 'Close', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
-      }
+      this.authenticateWithGoogle();
       return;
     }
 

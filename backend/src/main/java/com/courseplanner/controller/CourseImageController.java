@@ -13,7 +13,7 @@ import java.util.Map;
  * REST Controller for course image operations using Pixabay API
  */
 @RestController
-@RequestMapping("/course-images")
+@RequestMapping("/api/course-images")
 public class CourseImageController {
 
     @Autowired

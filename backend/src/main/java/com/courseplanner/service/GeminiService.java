@@ -1,7 +1,6 @@
 package com.courseplanner.service;
 
-import com.courseplanner.dto.GeminiRequest;
-import com.courseplanner.dto.GeminiResponse;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.courseplanner.model.Course;
 import com.courseplanner.model.Task;
 import com.courseplanner.model.User;
@@ -13,15 +12,19 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class GeminiService {
 
-    @Value("${gemini.api.key}")
+    @Value("${groq.api.key:${GROQ_API_KEY:}}")
     private String apiKey;
 
-    @Value("${gemini.api.url}")
+    @Value("${groq.api.url:https://api.groq.com/openai/v1/chat/completions}")
     private String apiUrl;
+
+    @Value("${groq.api.model:llama-3.3-70b-versatile}")
+    private String model;
 
     private final WebClient webClient;
     
@@ -104,27 +107,70 @@ public class GeminiService {
     /**
      * AI Chat for study guidance and FAQs with question classification
      */
-    public String chatResponse(String userMessage, String context) {
+    public String chatResponse(String userMessage, String context, String preferredLanguage) {
         // First, determine if this is a project-related question
-        if (isProjectRelatedQuestion(userMessage)) {
-            String prompt = "You are an AI study assistant for a course planning application. " +
-                           "Provide helpful, educational responses related to studying, course planning, task management, and academic guidance. " +
-                           "Context: " + (context != null ? context : "General study assistance") + "\n\n" +
-                           "User message: " + userMessage;
-            
-            return callGeminiAPI(prompt);
-        } else {
+        if (!isProjectRelatedQuestion(userMessage, context)) {
             // For non-project-related questions, return "Meet Admin" message
             return "For questions not related to course planning, studying, or academic guidance, please contact our admin team. " +
                    "Click 'Meet Admin' to get in touch with a human representative who can better assist you with your query.";
         }
+
+        String responseRules = buildResponseRules(userMessage, preferredLanguage, context);
+        String prompt = "You are an AI study assistant for a course planning application. " +
+                       "Only answer questions related to studying, course planning, tasks, quizzes, goals, and academic guidance.\n" +
+                       responseRules + "\n" +
+                       "Context: " + (context != null ? context : "General study assistance") + "\n\n" +
+                       "User message: " + userMessage;
+
+        return callGeminiAPI(prompt);
+    }
+
+    /**
+     * AI Chat that is personalized by user profile and only answers project-related questions.
+     */
+    public String chatResponseWithUserProfile(String userId, String userMessage, String context, String preferredLanguage) {
+        if (!isProjectRelatedQuestion(userMessage, context)) {
+            return "For questions not related to course planning, studying, or academic guidance, please contact our admin team. " +
+                   "Click 'Meet Admin' to get in touch with a human representative who can better assist you with your query.";
+        }
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return "Please log in with a valid user account so I can provide profile-based study guidance.";
+        }
+
+        String interests = (user.getInterests() == null || user.getInterests().isEmpty())
+                ? "Not provided"
+                : String.join(", ", user.getInterests());
+
+        String profileContext = "User Profile:\n" +
+                "- Name: " + user.getFirstName() + " " + user.getLastName() + "\n" +
+                "- Experience Level: " + (user.getExperienceLevel() != null ? user.getExperienceLevel() : "Not specified") + "\n" +
+                "- Interests: " + interests + "\n" +
+                "- Context: " + (context != null ? context : "General study assistance");
+
+        String responseRules = buildResponseRules(userMessage, preferredLanguage, context);
+        String prompt = "You are an AI study assistant for Course Planner AI. " +
+                "Answer only with project-related, educational guidance and personalize the response based on the profile below. " +
+            "If profile interests are missing, ask the user to update profile interests before giving recommendations.\n" +
+            responseRules + "\n\n" +
+                profileContext + "\n\n" +
+                "User message: " + userMessage;
+
+        return callGeminiAPI(prompt);
     }
 
     /**
      * Determine if a question is related to the project (course planning, studying, etc.)
      */
-    private boolean isProjectRelatedQuestion(String message) {
-        String lowercaseMessage = message.toLowerCase();
+    private boolean isProjectRelatedQuestion(String message, String context) {
+        String lowercaseMessage = message == null ? "" : message.toLowerCase();
+        String lowercaseContext = context == null ? "" : context.toLowerCase();
+
+        // If the call already has explicit course context, treat it as project-related.
+        if (lowercaseContext.contains("course") || lowercaseContext.contains("browse-courses") || lowercaseContext.contains("study")) {
+            return true;
+        }
         
         // Keywords that indicate project-related questions
         String[] projectKeywords = {
@@ -132,13 +178,15 @@ public class GeminiService {
             "syllabus", "lesson", "tutorial", "class", "schedule", "deadline", "task", "project",
             "grade", "score", "progress", "curriculum", "subject", "topic", "concept", "understanding",
             "explain", "help me understand", "how to learn", "study plan", "revision", "practice",
-            "difficulty", "beginner", "intermediate", "advanced", "prerequisite", "skill", "knowledge",
+            "difficulty", "beginner", "intermediate", "advanced", "prerequisite", "prerequisites", "skill", "knowledge",
             "instructor", "teacher", "professor", "mentor", "guidance", "advice", "tip", "strategy",
             "time management", "productivity", "focus", "concentration", "memory", "retention",
             "note taking", "reading", "writing", "research", "analysis", "problem solving",
             "mathematics", "science", "literature", "history", "language", "programming", "coding",
             "algorithm", "data structure", "software", "technology", "engineering", "business",
-            "management", "finance", "marketing", "design", "art", "music", "philosophy", "psychology"
+            "management", "finance", "marketing", "design", "art", "music", "philosophy", "psychology",
+            "suitable", "suitability", "worth", "enroll", "enrol", "compare", "comparison", "what should i study",
+            "what should i learn", "what next", "after this", "career path", "learning path", "recommend", "suggest"
         };
 
         // Check if message contains project-related keywords
@@ -148,22 +196,45 @@ public class GeminiService {
             }
         }
 
-        // Additional check: if message is asking for help/explanation in academic context
-        if ((lowercaseMessage.contains("help") || lowercaseMessage.contains("explain") || 
-             lowercaseMessage.contains("what is") || lowercaseMessage.contains("how to") ||
-             lowercaseMessage.contains("can you") || lowercaseMessage.contains("please")) &&
-            (lowercaseMessage.length() > 20)) { // Reasonable length for educational questions
-            
-            // Use AI to make a more sophisticated determination
-            String classificationPrompt = "Determine if the following question is related to education, learning, studying, course planning, academic subjects, or any educational/learning context. " +
-                                        "Respond with only 'YES' if it's educational/learning related, or 'NO' if it's completely unrelated to education/learning.\n\n" +
-                                        "Question: " + message;
-            
-            String classification = callGeminiAPI(classificationPrompt);
-            return classification != null && classification.trim().toUpperCase().startsWith("YES");
-        }
-        
         return false;
+    }
+
+    private String buildResponseRules(String userMessage, String preferredLanguage, String context) {
+        String normalized = userMessage == null ? "" : userMessage.toLowerCase();
+        String normalizedContext = context == null ? "" : context.toLowerCase();
+        boolean wantsLong = normalized.contains("long") || normalized.contains("detailed") ||
+                normalized.contains("in detail") || normalized.contains("detail me") ||
+                normalized.contains("deep") || normalized.contains("elaborate") ||
+                normalized.contains("विस्तार") || normalized.contains("detail") ||
+                normalized.contains("full explain");
+        boolean isBrowseCoursesContext = normalizedContext.contains("browse-courses") ||
+                normalizedContext.contains("page: browse-courses");
+
+        String lengthRule = wantsLong
+                ? "- Give a detailed answer with 8-12 bullet points and section headings."
+                : "- Keep answer concise with 3-6 bullet points. Avoid long paragraphs.";
+
+        String language = (preferredLanguage == null || preferredLanguage.isBlank()) ? "auto" : preferredLanguage.trim();
+        String languageRule;
+        if ("auto".equalsIgnoreCase(language)) {
+            languageRule = "- Reply in the same language as the user message.";
+        } else {
+            languageRule = "- Reply strictly in: " + language + ".";
+        }
+
+        String professionalRule = isBrowseCoursesContext
+            ? "- Use professional, advisor-like tone. No emojis, no slang, and no casual filler text."
+            : "- Keep a friendly but professional academic tone.";
+
+        return "Response format rules:\n" +
+                "- Always use structured, point-wise format.\n" +
+                "- If user asks steps/how-to, use numbered steps.\n" +
+                "- If user asks comparison, use short bullet comparison by criteria.\n" +
+                lengthRule + "\n" +
+                languageRule + "\n" +
+            professionalRule + "\n" +
+            "- Do not expose internal IDs, technical keys, or raw database identifiers.\n" +
+                "- Keep response practical and action-oriented for this project.";
     }
 
     /**
@@ -198,37 +269,47 @@ public class GeminiService {
     }
 
     /**
-     * Core method to call Gemini API with retry logic for rate limiting
+     * Core method to call Groq API with retry logic for rate limiting
      */
     public String callGeminiAPI(String prompt) {
         int maxRetries = 3;
         int baseDelayMs = 1000; // Start with 1 second delay
+
+        if (apiKey == null || apiKey.isBlank() || apiKey.contains("your-groq-api-key")) {
+            return buildOfflineFallbackResponse(prompt);
+        }
         
         for (int attempt = 0; attempt <= maxRetries; attempt++) {
             try {
-                // Create request payload
-                GeminiRequest.Part part = new GeminiRequest.Part(prompt);
-                GeminiRequest.Content content = new GeminiRequest.Content(Arrays.asList(part));
-                GeminiRequest request = new GeminiRequest(Arrays.asList(content));
+                // Create Groq OpenAI-compatible chat request payload
+                Map<String, Object> request = Map.of(
+                    "model", model,
+                    "messages", List.of(
+                        Map.of("role", "system", "content", "You are a helpful AI study assistant for course planning."),
+                        Map.of("role", "user", "content", prompt)
+                    ),
+                    "temperature", 0.7,
+                    "max_tokens", 1024
+                );
 
                 // Make API call
-                GeminiResponse response = webClient.post()
-                        .uri(apiUrl + "?key=" + apiKey)
+                JsonNode response = webClient.post()
+                    .uri(apiUrl)
+                    .header("Authorization", "Bearer " + apiKey)
                         .header("Content-Type", "application/json")
                         .bodyValue(request)
                         .retrieve()
-                        .bodyToMono(GeminiResponse.class)
+                    .bodyToMono(JsonNode.class)
                         .block();
 
-                // Extract response text
-                if (response != null && 
-                    response.getCandidates() != null && 
-                    !response.getCandidates().isEmpty() &&
-                    response.getCandidates().get(0).getContent() != null &&
-                    response.getCandidates().get(0).getContent().getParts() != null &&
-                    !response.getCandidates().get(0).getContent().getParts().isEmpty()) {
-                    
-                    return response.getCandidates().get(0).getContent().getParts().get(0).getText();
+                // Extract response text from Groq format: choices[0].message.content
+                if (response != null &&
+                    response.path("choices").isArray() &&
+                    !response.path("choices").isEmpty()) {
+                    String content = response.path("choices").get(0).path("message").path("content").asText();
+                    if (content != null && !content.isBlank()) {
+                    return content;
+                    }
                 }
 
                 return "Sorry, I couldn't generate a response at this time. Please try again.";
@@ -241,7 +322,7 @@ public class GeminiService {
                     // Rate limited or server error - retry with exponential backoff
                     if (attempt < maxRetries) {
                         int delayMs = baseDelayMs * (int) Math.pow(2, attempt); // Exponential backoff
-                        System.out.println("Gemini API error " + statusCode + ", retrying in " + delayMs + "ms... (attempt " + (attempt + 1) + "/" + maxRetries + ")");
+                        System.out.println("Groq API error " + statusCode + ", retrying in " + delayMs + "ms... (attempt " + (attempt + 1) + "/" + maxRetries + ")");
                         
                         try {
                             Thread.sleep(delayMs);
@@ -252,12 +333,12 @@ public class GeminiService {
                         continue; // Retry
                     } else {
                         // Max retries exceeded
-                        System.err.println("Gemini API rate limit exceeded after " + maxRetries + " retries");
+                        System.err.println("Groq API rate limit exceeded after " + maxRetries + " retries");
                         throw new RuntimeException("AI service temporarily unavailable. Please try again in a few moments.");
                     }
                 } else {
                     // Other client errors (4xx) - don't retry
-                    System.err.println("Gemini API error: " + statusCode + " - " + e.getMessage());
+                    System.err.println("Groq API error: " + statusCode + " - " + e.getMessage());
                     throw new RuntimeException("AI service error. Please try again.");
                 }
             } catch (Exception e) {
@@ -278,6 +359,49 @@ public class GeminiService {
         }
         
         return "Sorry, I couldn't generate a response at this time. Please try again.";
+    }
+
+    private String buildOfflineFallbackResponse(String prompt) {
+        String userMessage = extractBetween(prompt, "User message:", "\n");
+        String context = extractBetween(prompt, "Context:", "\n");
+        String question = (userMessage == null || userMessage.isBlank()) ? "your query" : userMessage.trim();
+
+        StringBuilder response = new StringBuilder();
+        response.append("AI cloud model is temporarily unavailable, but I can still guide you based on your context.\n\n");
+        response.append("Question understood: ").append(question).append("\n\n");
+        response.append("Suggested next steps:\n");
+        response.append("1. Choose a course matching your current level (Beginner/Intermediate/Advanced).\n");
+        response.append("2. Check prerequisites first, then commit a weekly study schedule (3-6 hrs minimum).\n");
+        response.append("3. After each module, do one practice task and one revision session.\n");
+        response.append("4. Track progress weekly and adjust pace based on completion rate.\n");
+
+        if (context != null && !context.isBlank()) {
+            response.append("\nContext used: ").append(context.trim());
+        }
+
+        return response.toString();
+    }
+
+    private String extractBetween(String source, String startToken, String endToken) {
+        if (source == null || startToken == null) {
+            return "";
+        }
+
+        int start = source.indexOf(startToken);
+        if (start < 0) {
+            return "";
+        }
+
+        int contentStart = start + startToken.length();
+        int end = endToken == null || endToken.isBlank()
+                ? -1
+                : source.indexOf(endToken, contentStart);
+
+        if (end < 0) {
+            end = source.length();
+        }
+
+        return source.substring(contentStart, end).trim();
     }
 
     /**
@@ -342,64 +466,13 @@ public class GeminiService {
             prompt.append("Start with: '💡 **Personalized Course Recommendations**'\n\n");
             prompt.append("IMPORTANT: Do NOT recommend JavaScript/TypeScript courses if user is interested in AI/ML!");
             
-            System.out.println("📤 Sending prompt to Gemini API...");
-            
-            // TEMPORARY: Use mock response until Gemini API issues are resolved
-            // Comment out API call temporarily
-            // String response = callGeminiAPI(prompt.toString());
-            
-            // Generate mock response based on user interests
-            String response = generateMockRecommendation(userInterests, experienceLevel);
-            
-            System.out.println("✅ Using mock response (Gemini API temporarily disabled)");
-            
-            return response;
+            System.out.println("📤 Sending prompt to Groq API...");
+            return callGeminiAPI(prompt.toString());
             
         } catch (Exception e) {
             System.err.println("❌ Error generating personalized recommendation: " + e.getMessage());
             e.printStackTrace();
-            return "I'd love to give you personalized recommendations! Please make sure your profile interests are set up in your profile settings, " +
-                   "and I'll suggest courses that perfectly match your learning goals. 🎯";
-        }
-    }
-    
-    /**
-     * Generate mock course recommendations based on user interests
-     * TEMPORARY: Used while Gemini API issues are being resolved
-     */
-    private String generateMockRecommendation(List<String> interests, String experienceLevel) {
-        String interestDisplay = String.join(", ", interests);
-        String primaryInterest = interests.get(0).toLowerCase();
-        
-        if (primaryInterest.contains("artificial intelligence") || primaryInterest.contains("ai") || 
-            primaryInterest.contains("machine learning")) {
-            return "💡 **Personalized Course Recommendations for " + interestDisplay + "**\n\n" +
-                   "Based on your interest in **" + interestDisplay + "**, here are my top recommendations:\n\n" +
-                   "**🎯 HIGHLY RECOMMENDED FOR YOU:**\n\n" +
-                   "**1. Introduction to Machine Learning** ⭐ Best Match\n" +
-                   "   • Why: Perfect starting point for AI enthusiasts\n" +
-                   "   • Topics: Supervised learning, neural networks, model training\n" +
-                   "   • Duration: 10 weeks\n" +
-                   "   • Level: " + (experienceLevel != null ? experienceLevel : "Beginner") + "\n\n" +
-                   "**2. Deep Learning Fundamentals** 🔥\n" +
-                   "   • Why: Essential for modern AI applications\n" +
-                   "   • Topics: CNNs, RNNs, TensorFlow, PyTorch\n" +
-                   "   • Duration: 12 weeks\n\n" +
-                   "**3. Natural Language Processing** 🗣️\n" +
-                   "   • Why: Build chatbots and text analysis systems\n" +
-                   "   • Topics: Text processing, transformers, BERT\n" +
-                   "   • Duration: 8 weeks\n\n" +
-                   "**📚 Browse the Courses section to explore these and more!**\n\n" +
-                   "Ready to start your AI learning journey? 🚀";
-        } else {
-            return "💡 **Personalized Course Recommendations for " + interestDisplay + "**\n\n" +
-                   "Based on your interests, I recommend exploring our course catalog in the **Courses** section.\n\n" +
-                   "**🎯 Suggested Learning Path:**\n" +
-                   "1. Start with beginner-friendly courses in your interest area\n" +
-                   "2. Practice with hands-on projects\n" +
-                   "3. Progress to advanced topics\n\n" +
-                   "**📚 Check the Courses page** to find courses matching: " + interestDisplay + "\n\n" +
-                   "Happy learning! 🚀";
+            return "Unable to generate personalized recommendations right now. Please try again in a moment.";
         }
     }
 }

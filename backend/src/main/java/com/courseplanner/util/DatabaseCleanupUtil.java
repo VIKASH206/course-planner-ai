@@ -1,6 +1,7 @@
 package com.courseplanner.util;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,7 @@ import java.util.List;
  * This will run once on application startup
  */
 @Component
+@ConditionalOnProperty(name = "app.db.cleanup.enabled", havingValue = "true")
 public class DatabaseCleanupUtil {
 
     @Autowired

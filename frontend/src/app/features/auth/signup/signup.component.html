@@ -199,8 +199,14 @@
 
       <!-- Social Login Buttons -->
       <div class="space-y-3">
-        <!-- Google Sign-In Button Container - GSI will render here -->
-        <div id="googleSignInButtonSignup" class="w-full flex items-center justify-center min-h-[44px]"></div>
+        <button
+          type="button"
+          (click)="socialLogin('Google')"
+          class="w-full h-12 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 text-gray-800 font-semibold flex items-center justify-center gap-2 transition-colors"
+          [disabled]="isLoading()">
+          <span class="text-lg">G</span>
+          <span>Continue with Google</span>
+        </button>
       </div>
     </div>
 

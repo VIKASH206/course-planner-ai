@@ -1,5 +1,5 @@
-import { Component, OnInit, AfterViewInit, signal, Inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,14 +10,12 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/services/auth-backend.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { BackendApiService } from '../../../core/services/backend-api.service';
-
-// Declare Google Identity Services
-declare const google: any;
+import { getFirebaseApp } from '../../../core/config/firebase.config';
+import { GoogleAuthProvider, getAuth, signInWithPopup } from 'firebase/auth';
 
 interface Role {
   value: string;
@@ -44,23 +42,16 @@ interface PasswordStrength {
     MatCheckboxModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
-    ThemeToggleComponent
+    MatSnackBarModule
   ],
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss']
 })
-export class SignupComponent implements OnInit, AfterViewInit {
+export class SignupComponent implements OnInit {
   signupForm!: FormGroup;
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
   isLoading = signal(false);
-  selectedGoogleEmail = signal('');
-  googleButtonRendered = false;
-
-  // Google authentication state
-  isGoogleApiLoaded = false;
-  googleUser: any = null;
 
   roles: Role[] = [
     { value: 'student', display: 'Student' },
@@ -73,175 +64,13 @@ export class SignupComponent implements OnInit, AfterViewInit {
     private notificationService: NotificationService,
     private authService: AuthService,
     private backendApi: BackendApiService,
-    private router: Router,
-    @Inject(PLATFORM_ID) private platformId: Object
+    private router: Router
   ) {}
 
   ngOnInit() {
     this.createForm();
   }
 
-  ngAfterViewInit() {
-    // Initialize Google Sign-In after view is fully loaded
-    if (isPlatformBrowser(this.platformId)) {
-      setTimeout(() => {
-        this.initializeGoogleSignIn();
-      }, 500);
-    }
-  }
-
-  initializeGoogleSignIn() {
-    const checkGoogleLoaded = setInterval(() => {
-      if (typeof google !== 'undefined' && google.accounts) {
-        clearInterval(checkGoogleLoaded);
-        this.setupGoogleSignIn();
-      }
-    }, 100);
-
-    setTimeout(() => clearInterval(checkGoogleLoaded), 10000);
-  }
-
-  setupGoogleSignIn() {
-    try {
-      google.accounts.id.initialize({
-        client_id: environment.googleClientId,
-        callback: this.handleGoogleSignIn.bind(this),
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        ux_mode: 'popup'
-      });
-
-      const buttonContainer = document.getElementById('googleSignInButtonSignup');
-      if (buttonContainer && !this.googleButtonRendered) {
-        buttonContainer.innerHTML = '';
-        
-        google.accounts.id.renderButton(
-          buttonContainer,
-          {
-            theme: 'outline',
-            size: 'large',
-            width: buttonContainer.offsetWidth || 350,
-            text: 'continue_with',
-            shape: 'rectangular',
-            logo_alignment: 'left'
-          }
-        );
-        this.googleButtonRendered = true;
-        console.log('✅ Google Sign-In button rendered on signup');
-      }
-
-      google.accounts.id.prompt((notification: any) => {
-        console.log('One Tap notification:', notification);
-      });
-    } catch (error) {
-      console.error('Error setting up Google Sign-In:', error);
-    }
-  }
-
-  handleGoogleSignIn(response: any) {
-    this.isLoading.set(true);
-    console.log('🔐 Google Sign-In response received on signup');
-
-    try {
-      const payload = this.parseJwt(response.credential);
-      console.log('📧 Google user data:', payload);
-
-      this.authService.loginWithGoogle(payload).subscribe({
-        next: (user: any) => {
-          console.log('✅ Backend response received, user:', user);
-          this.isLoading.set(false);
-          
-          this.snackBar.open(`Welcome, ${user.firstName}!`, 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-
-          console.log('🚀 Navigating to dashboard, user role:', user.role);
-
-          if (user.role === 'ADMIN') {
-            console.log('👑 Admin user, redirecting to admin dashboard');
-            window.location.href = '/admin/dashboard';
-          } else {
-            console.log('👤 Student user, checking onboarding status');
-            this.backendApi.checkOnboardingStatus(user.id).subscribe({
-              next: (response: any) => {
-                if (response.success && response.data === false) {
-                  console.log('📝 User needs onboarding, redirecting to onboarding');
-                  window.location.href = '/onboarding';
-                } else {
-                  console.log('🏠 User completed onboarding, redirecting to dashboard');
-                  window.location.href = '/dashboard';
-                }
-              },
-              error: () => {
-                console.log('⚠️ Onboarding check failed, defaulting to dashboard');
-                window.location.href = '/dashboard';
-              }
-            });
-          }
-        },
-        error: (error: any) => {
-          this.isLoading.set(false);
-          console.error('❌ Google login error:', error);
-          this.snackBar.open(error.message || 'Google login failed. Please try again.', 'Close', {
-            duration: 4000,
-            panelClass: ['error-snackbar']
-          });
-        }
-      });
-    } catch (error) {
-      this.isLoading.set(false);
-      console.error('❌ Error processing Google Sign-In:', error);
-      this.snackBar.open('Failed to process Google Sign-In. Please try again.', 'Close', {
-        duration: 4000,
-        panelClass: ['error-snackbar']
-      });
-    }
-  }
-
-  parseJwt(token: string): any {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('Error parsing JWT:', error);
-      return null;
-    }
-  }
-
-  private loadGoogleAPI() {
-    // Deprecated - using Google Identity Services instead
-    // Load Google API script
-    if (!document.querySelector('script[src="https://apis.google.com/js/api.js"]')) {
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      script.onload = () => {
-        this.initializeGoogleAPI();
-      };
-      document.head.appendChild(script);
-    } else {
-      this.initializeGoogleAPI();
-    }
-  }
-
-  private initializeGoogleAPI() {
-    (window as any).gapi.load('auth2', () => {
-      (window as any).gapi.auth2.init({
-        client_id: environment.googleClientId
-      }).then(() => {
-        this.isGoogleApiLoaded = true;
-        console.log('Google API loaded successfully');
-      }).catch((error: any) => {
-        console.error('Error loading Google API:', error);
-        // Show message that Google auth needs to be configured
-        this.notificationService.showError('Google authentication requires configuration. Please set up Google Client ID in environment.ts', 5000);
-      });
-    });
-  }
 
   private createForm() {
     this.signupForm = this.fb.group({
@@ -409,96 +238,74 @@ export class SignupComponent implements OnInit, AfterViewInit {
 
 
   private authenticateWithGoogle() {
-    if (!this.isGoogleApiLoaded) {
-      this.snackBar.open('Google API is still loading, please try again', 'Close', {
-        duration: 3000
-      });
-      return;
-    }
-
     this.isLoading.set(true);
+    try {
+      if (!environment.firebase?.apiKey || !environment.firebase?.projectId) {
+        throw new Error('Firebase is not configured. Please set frontend environment firebase keys.');
+      }
 
-    const authInstance = (window as any).gapi.auth2.getAuthInstance();
-    
-    authInstance.signIn({
-      scope: 'profile email'
-    }).then((googleUser: any) => {
-      const profile = googleUser.getBasicProfile();
-      const authResponse = googleUser.getAuthResponse();
-      
-      // Get user information
-      const userData = {
-        id: profile.getId(),
-        name: profile.getName(),
-        givenName: profile.getGivenName(),
-        familyName: profile.getFamilyName(),
-        email: profile.getEmail(),
-        imageUrl: profile.getImageUrl(),
-        idToken: authResponse.id_token,
-        accessToken: authResponse.access_token
-      };
+      const app = getFirebaseApp(environment.firebase);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
 
-      this.handleGoogleAuthSuccess(userData);
-      
-    }).catch((error: any) => {
+      signInWithPopup(auth, provider)
+        .then(async (credential) => {
+          const firebaseUser = credential.user;
+          const idToken = await firebaseUser.getIdToken();
+
+          this.authService.loginWithGoogle(firebaseUser, idToken).subscribe({
+            next: (user: any) => {
+              this.isLoading.set(false);
+
+              this.snackBar.open(`Welcome, ${user.firstName}!`, 'Close', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+              });
+
+              if (user.role === 'ADMIN') {
+                window.location.href = '/admin/dashboard';
+              } else {
+                this.backendApi.checkOnboardingStatus(user.id).subscribe({
+                  next: (response: any) => {
+                    if (response.success && response.data === false) {
+                      window.location.href = '/onboarding';
+                    } else {
+                      window.location.href = '/dashboard';
+                    }
+                  },
+                  error: () => {
+                    window.location.href = '/dashboard';
+                  }
+                });
+              }
+            },
+            error: (error: any) => {
+              this.isLoading.set(false);
+              console.error('❌ Google login error:', error);
+              this.snackBar.open(error.message || 'Google login failed. Please try again.', 'Close', {
+                duration: 4000,
+                panelClass: ['error-snackbar']
+              });
+            }
+          });
+        })
+        .catch((error) => {
+          this.isLoading.set(false);
+          console.error('❌ Firebase popup failed:', error);
+          this.snackBar.open('Google sign-in failed. Please try again.', 'Close', {
+            duration: 4000,
+            panelClass: ['error-snackbar']
+          });
+        });
+    } catch (error) {
       this.isLoading.set(false);
-      console.error('Google authentication failed:', error);
-      
-      if (error.error === 'popup_closed_by_user') {
-        this.snackBar.open('Google authentication was cancelled', 'Close', {
-          duration: 3000
-        });
-      } else {
-        this.snackBar.open('Google authentication failed', 'Close', {
-          duration: 3000
-        });
-      }
-    });
-  }
-
-  private handleGoogleAuthSuccess(userData: any) {
-    this.isLoading.set(false);
-    
-    // TODO: Implement Google social login with backend
-    this.snackBar.open('Google login not yet connected to backend. Please use regular signup.', 'Close', {
-      duration: 4000,
-      panelClass: ['warning-snackbar']
-    });
-    
-    // For now, just populate the form with Google data
-    this.signupForm.patchValue({
-      firstName: userData.given_name || '',
-      lastName: userData.family_name || '',
-      email: userData.email || '',
-      username: userData.email?.split('@')[0] || ''
-    });
-    
-    this.selectedGoogleEmail.set(userData.email);
-    this.googleUser = userData;
-  }
-
-  // Reset Google authentication
-  resetGoogleAuth() {
-    this.selectedGoogleEmail.set('');
-    this.googleUser = null;
-    this.signupForm.get('email')?.enable();
-    this.signupForm.patchValue({
-      firstName: '',
-      lastName: '',
-      email: ''
-    });
-    
-    // Sign out from Google if authenticated
-    if (this.isGoogleApiLoaded) {
-      const authInstance = (window as any).gapi.auth2.getAuthInstance();
-      if (authInstance.isSignedIn.get()) {
-        authInstance.signOut();
-      }
+      console.error('❌ Error starting Google Sign-In:', error);
+      this.snackBar.open('Failed to start Google sign-in. Please try again.', 'Close', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
     }
-    
-    this.snackBar.open('Google authentication reset', 'Close', {
-      duration: 2000
-    });
   }
 
   private markFormGroupTouched() {

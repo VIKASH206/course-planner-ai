@@ -233,23 +233,13 @@ export class ApiService {
   }
 
   sendMessage(message: string): Observable<ApiResponse<any>> {
-    return this.generateAIResponse(message);
+    const userId = this.getCurrentUserId() || undefined;
+    return this.sendAIMessage(message, 'General study assistance', userId, 'auto');
   }
 
   private generateAIResponse(userMessage: string): Observable<ApiResponse<any>> {
-    // First check if the question is project-related
-    if (!this.isProjectRelatedQuestion(userMessage)) {
-      return this.getMeetAdminResponse();
-    }
-
-    // Dynamic AI processing - send actual request to AI model for project-related questions
-    return this.callOpenAIAPI(userMessage).pipe(
-      catchError(error => {
-        console.error('OpenAI API error:', error);
-        // Fallback to contextual static response if AI API fails
-        return this.generateContextualFallback(userMessage);
-      })
-    );
+    const userId = this.getCurrentUserId() || undefined;
+    return this.sendAIMessage(userMessage, 'General study assistance', userId, 'auto');
   }
 
   private callOpenAIAPI(userMessage: string): Observable<ApiResponse<any>> {
@@ -2638,35 +2628,12 @@ How can I help you with your learning today?`,
   }
 
   // New AI Chat method that connects to backend
-  sendAIMessage(message: string, context?: string, userId?: string): Observable<ApiResponse<any>> {
-    // Detect intent from context parameter
-    const intent = this.detectIntentFromContext(context || '');
-    
-    // Temporary fallback for testing - check if question is project-related
-    const isProjectRelated = this.isProjectRelatedQuestion(message);
-    
-    if (!isProjectRelated) {
-      // Return "Meet Admin" response for non-project questions
-      return of({
-        data: {
-          response: 'For questions not related to course planning, studying, or academic guidance, please contact our admin team. Click "Meet Admin" to get in touch with a human representative who can better assist you with your query.',
-          isProjectRelated: false,
-          showMeetAdmin: true,
-          timestamp: new Date(),
-          conversationId: 'local_' + Date.now(),
-          messageId: 'msg_' + Date.now(),
-          isAIGenerated: false
-        },
-        message: 'Non-project question detected',
-        status: 'success' as const
-      }).pipe(delay(1000));
-    }
-
-    // For project-related questions, try backend first, then fallback to intent-based responses
+  sendAIMessage(message: string, context?: string, userId?: string, language: string = 'auto'): Observable<ApiResponse<any>> {
     const requestBody = {
       message: message,
       context: context || 'General study assistance',
-      userId: userId || 'anonymous'
+      userId: userId || 'anonymous',
+      language
     };
 
     console.log('📤 Calling backend AI API with:', requestBody);
@@ -2674,37 +2641,7 @@ How can I help you with your learning today?`,
     return this.http.post<ApiResponse<any>>(`${environment.apiUrl}/ai/chat`, requestBody).pipe(
       map((response: ApiResponse<any>) => {
         console.log('✅ Backend AI Response:', response);
-        
-        // Check if backend returned generic/error message - use frontend fallback instead
-        const backendMessage = response.data?.message || '';
-        const isGenericMessage = backendMessage.includes('profile interests are set up') || 
-                                  backendMessage.includes('profile interests aren\'t set up') ||
-                                  backendMessage.includes('Please make sure your profile') ||
-                                  backendMessage.includes('Please log in') ||
-                                  backendMessage.includes('personalized recommendations') ||
-                                  backendMessage.includes('I\'d love to give you');
-        
-        if (isGenericMessage) {
-          console.log('⚠️ Backend returned generic message:', backendMessage);
-          console.log('🔄 Prompting user to set up profile interests...');
-          
-          // Simply return the backend's message asking user to set up profile
-          // NO fallback recommendations with dummy data
-          return {
-            data: {
-              response: backendMessage,
-              isProjectRelated: true,
-              showMeetAdmin: false,
-              timestamp: new Date(),
-              conversationId: 'ai_' + Date.now(),
-              messageId: 'msg_' + Date.now(),
-              isAIGenerated: true
-            },
-            message: 'User needs to set up profile interests',
-            status: 'success' as const
-          };
-        }
-        
+
         return {
           data: {
             response: response.data.message,
@@ -2721,9 +2658,19 @@ How can I help you with your learning today?`,
       }),
       catchError(error => {
         console.error('❌ Backend AI API error:', error);
-        console.log('🔄 Falling back to intent-based response');
-        // Use intent-based intelligent fallback responses
-        return this.getIntentBasedResponse(message, intent, userId);
+        return of({
+          data: {
+            response: 'AI service is temporarily unavailable. Please try again in a moment.',
+            conversationId: 'error_' + Date.now(),
+            messageId: 'msg_' + Date.now(),
+            timestamp: new Date(),
+            isAIGenerated: false,
+            isProjectRelated: true,
+            showMeetAdmin: true
+          },
+          message: 'Backend AI unavailable',
+          status: 'error' as const
+        });
       }),
       delay(1500)
     );
@@ -2760,54 +2707,18 @@ How can I help you with your learning today?`,
    * Get intelligent response based on detected intent
    */
   private getIntentBasedResponse(message: string, intent: string, userId?: string): Observable<ApiResponse<any>> {
-    // When backend fails, return a simple message asking user to try again or set up profile
-    // NO hardcoded course recommendations
-    console.log('⚠️ Backend API unavailable, returning fallback message');
-    
-    let fallbackMessage = '';
-    
-    if (intent === 'course_recommendation') {
-      fallbackMessage = `🎯 **I'd love to recommend courses for you!**
-
-To get personalized recommendations:
-
-1. **Make sure you're logged in**
-2. **Set up your profile interests:**
-   - Go to Profile → Edit Profile
-   - Add your interests (e.g., Artificial Intelligence, Web Development, Data Science)
-   - Save your profile
-
-3. **Come back and ask again!**
-
-If you're already logged in with interests set, please try again in a moment as our AI service is temporarily unavailable.
-
-You can also browse all available courses in the Courses section! 📚`;
-    } else {
-      fallbackMessage = `I'm here to help with your course planning and learning! 
-
-I can assist you with:
-• 📚 Course recommendations (based on your interests)
-• 📅 Study planning and scheduling
-• 📊 Progress tracking and insights
-• 🎯 Learning tips and guidance
-
-Please make sure you're logged in and your profile is set up for personalized recommendations.
-
-You can also browse courses directly from the Courses page!`;
-    }
-
     return of({
       data: {
-        response: fallbackMessage,
+        response: 'AI service is temporarily unavailable. Please try again in a moment.',
         conversationId: 'local_' + Date.now(),
         messageId: 'msg_' + Date.now(),
         timestamp: new Date(),
-        isAIGenerated: true,
+        isAIGenerated: false,
         isProjectRelated: true
       },
-      message: 'Fallback response - backend unavailable',
+      message: 'Backend unavailable',
       status: 'success' as const
-    }).pipe(delay(1000));
+    });
   }
 
   // ============================================================================

@@ -110,16 +110,17 @@ export class AuthService {
   /**
    * Login with Google - Backend integration
    */
-  loginWithGoogle(googleData: any): Observable<AuthUser> {
+  loginWithGoogle(firebaseUser: any, firebaseIdToken: string): Observable<AuthUser> {
     this._isLoading.set(true);
 
+    const nameParts = (firebaseUser?.displayName || '').trim().split(/\s+/).filter(Boolean);
     const googleAuthRequest = {
-      googleToken: googleData.credential || '',
-      email: googleData.email,
-      firstName: googleData.given_name || googleData.name?.split(' ')[0] || 'User',
-      lastName: googleData.family_name || googleData.name?.split(' ').slice(1).join(' ') || '',
-      profilePicture: googleData.picture || '',
-      googleId: googleData.sub || googleData.id
+      googleToken: firebaseIdToken,
+      email: firebaseUser?.email || '',
+      firstName: nameParts[0] || 'User',
+      lastName: nameParts.slice(1).join(' '),
+      profilePicture: firebaseUser?.photoURL || '',
+      googleId: firebaseUser?.uid || ''
     };
 
     return this.http.post<any>(`${environment.apiUrl}/auth/google`, googleAuthRequest, { withCredentials: true }).pipe(
@@ -155,7 +156,11 @@ export class AuthService {
       catchError(error => {
         this._isLoading.set(false);
         console.error('Google login error:', error);
-        return throwError(() => error);
+        const backendMessage = error?.error?.message || error?.error?.error || '';
+        const message = error?.status === 0
+          ? 'Backend server unreachable. Please start backend on port 8080 and try again.'
+          : (backendMessage || 'Google login failed. Please try again.');
+        return throwError(() => new Error(message));
       })
     );
   }

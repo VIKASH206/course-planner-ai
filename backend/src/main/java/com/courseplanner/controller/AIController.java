@@ -142,24 +142,19 @@ public class AIController {
                         .body(ApiResponse.error("Message is required for chat"));
             }
 
-            // Check if this is a course recommendation request
-            String message = request.getMessage().toLowerCase();
-            boolean isRecommendationRequest = message.contains("recommend") || 
-                                             message.contains("suggest") || 
-                                             message.contains("course for me") ||
-                                             message.contains("what should i learn");
-
             String response;
-            
-            if (isRecommendationRequest && request.getUserId() != null) {
-                // Generate personalized recommendations based on user interests
-                response = geminiService.generatePersonalizedCourseRecommendation(
-                    request.getUserId(), 
-                    request.getMessage()
+
+                if (request.getUserId() != null
+                    && !request.getUserId().isBlank()
+                    && !"anonymous".equalsIgnoreCase(request.getUserId())) {
+                response = geminiService.chatResponseWithUserProfile(
+                        request.getUserId(),
+                        request.getMessage(),
+                        request.getContext(),
+                        request.getLanguage()
                 );
             } else {
-                // Regular chat response
-                response = geminiService.chatResponse(request.getMessage(), request.getContext());
+                response = geminiService.chatResponse(request.getMessage(), request.getContext(), request.getLanguage());
             }
             
             // Determine if this was classified as project-related or not
@@ -206,7 +201,12 @@ public class AIController {
                 // Course not found, use basic context
             }
 
-            String aiResponse = geminiService.chatResponse(message, courseContext);
+            String aiResponse;
+            if (userId != null && !userId.isBlank()) {
+                aiResponse = geminiService.chatResponseWithUserProfile(userId, message, courseContext, "auto");
+            } else {
+                aiResponse = geminiService.chatResponse(message, courseContext, "auto");
+            }
             
             Map<String, Object> chatResponse = new HashMap<>();
             chatResponse.put("id", "ai-" + System.currentTimeMillis());
