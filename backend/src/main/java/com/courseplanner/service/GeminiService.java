@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -280,91 +281,152 @@ public class GeminiService {
     public String callGeminiAPI(String prompt) {
         int maxRetries = 3;
         int baseDelayMs = 1000; // Start with 1 second delay
+        String normalizedApiKey = sanitizeEnvValue(apiKey);
+        List<String> modelCandidates = buildModelCandidates(sanitizeEnvValue(model));
 
-        if (apiKey == null || apiKey.isBlank() || apiKey.contains("your-groq-api-key")) {
+        if (normalizedApiKey.isBlank() || normalizedApiKey.contains("your-groq-api-key")) {
             return buildOfflineFallbackResponse(prompt);
         }
-        
-        for (int attempt = 0; attempt <= maxRetries; attempt++) {
-            try {
-                // Create Groq OpenAI-compatible chat request payload
-                Map<String, Object> request = Map.of(
-                    "model", model,
-                    "messages", List.of(
-                        Map.of("role", "system", "content", "You are a helpful AI study assistant for course planning."),
-                        Map.of("role", "user", "content", prompt)
-                    ),
-                    "temperature", 0.7,
-                    "max_tokens", 1024
-                );
 
-                // Make API call
-                JsonNode response = webClient.post()
-                    .uri(apiUrl)
-                    .header("Authorization", "Bearer " + apiKey)
-                        .header("Content-Type", "application/json")
-                        .bodyValue(request)
-                        .retrieve()
-                    .bodyToMono(JsonNode.class)
-                        .block();
+        for (int modelIndex = 0; modelIndex < modelCandidates.size(); modelIndex++) {
+            String currentModel = modelCandidates.get(modelIndex);
+            boolean hasMoreModels = modelIndex < modelCandidates.size() - 1;
 
-                // Extract response text from Groq format: choices[0].message.content
-                if (response != null &&
-                    response.path("choices").isArray() &&
-                    !response.path("choices").isEmpty()) {
-                    String content = response.path("choices").get(0).path("message").path("content").asText();
-                    if (content != null && !content.isBlank()) {
-                    return content;
+            for (int attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    // Create Groq OpenAI-compatible chat request payload
+                    Map<String, Object> request = Map.of(
+                        "model", currentModel,
+                        "messages", List.of(
+                            Map.of("role", "system", "content", "You are a helpful AI study assistant for course planning."),
+                            Map.of("role", "user", "content", prompt)
+                        ),
+                        "temperature", 0.7,
+                        "max_tokens", 1024
+                    );
+
+                    // Make API call
+                    JsonNode response = webClient.post()
+                        .uri(apiUrl)
+                        .header("Authorization", "Bearer " + normalizedApiKey)
+                            .header("Content-Type", "application/json")
+                            .bodyValue(request)
+                            .retrieve()
+                        .bodyToMono(JsonNode.class)
+                            .block();
+
+                    // Extract response text from Groq format: choices[0].message.content
+                    if (response != null &&
+                        response.path("choices").isArray() &&
+                        !response.path("choices").isEmpty()) {
+                        String content = response.path("choices").get(0).path("message").path("content").asText();
+                        if (content != null && !content.isBlank()) {
+                            return content;
+                        }
                     }
-                }
 
-                return "Sorry, I couldn't generate a response at this time. Please try again.";
+                    return "Sorry, I couldn't generate a response at this time. Please try again.";
 
-            } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-                // Handle rate limiting (429) and server errors (5xx)
-                int statusCode = e.getStatusCode().value();
-                
-                if (statusCode == 429 || (statusCode >= 500 && statusCode < 600)) {
-                    // Rate limited or server error - retry with exponential backoff
+                } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
+                    // Handle rate limiting (429) and server errors (5xx)
+                    int statusCode = e.getStatusCode().value();
+                    String errorBody = e.getResponseBodyAsString();
+                    String normalizedError = errorBody == null ? "" : errorBody.toLowerCase();
+                    boolean modelError = (statusCode == 400 || statusCode == 404)
+                            && (normalizedError.contains("model")
+                            || normalizedError.contains("does not exist")
+                            || normalizedError.contains("not found"));
+
+                    if (modelError && hasMoreModels) {
+                        System.out.println("Groq model '" + currentModel + "' unavailable. Switching to fallback model.");
+                        break;
+                    }
+
+                    if (statusCode == 429 || (statusCode >= 500 && statusCode < 600)) {
+                        // Rate limited or server error - retry with exponential backoff
+                        if (attempt < maxRetries) {
+                            int delayMs = baseDelayMs * (int) Math.pow(2, attempt); // Exponential backoff
+                            System.out.println("Groq API error " + statusCode + ", retrying in " + delayMs + "ms... (attempt " + (attempt + 1) + "/" + maxRetries + ")");
+
+                            try {
+                                Thread.sleep(delayMs);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                return "Request interrupted. Please try again.";
+                            }
+                            continue; // Retry
+                        } else {
+                            // Max retries exceeded for this model
+                            System.err.println("Groq API rate limit/server issue after " + maxRetries + " retries on model " + currentModel);
+                            if (hasMoreModels) {
+                                break;
+                            }
+                            return buildOfflineFallbackResponse(prompt);
+                        }
+                    } else {
+                        // Other client errors (4xx) - don't retry
+                        System.err.println("Groq API error on model " + currentModel + ": " + statusCode + " - " + e.getMessage());
+                        if (hasMoreModels) {
+                            break;
+                        }
+                        return buildOfflineFallbackResponse(prompt);
+                    }
+                } catch (Exception e) {
+                    // Unexpected errors
+                    e.printStackTrace();
                     if (attempt < maxRetries) {
-                        int delayMs = baseDelayMs * (int) Math.pow(2, attempt); // Exponential backoff
-                        System.out.println("Groq API error " + statusCode + ", retrying in " + delayMs + "ms... (attempt " + (attempt + 1) + "/" + maxRetries + ")");
-                        
+                        System.out.println("Unexpected error, retrying... (attempt " + (attempt + 1) + "/" + maxRetries + ")");
                         try {
-                            Thread.sleep(delayMs);
+                            Thread.sleep(baseDelayMs);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                             return "Request interrupted. Please try again.";
                         }
-                        continue; // Retry
-                    } else {
-                        // Max retries exceeded
-                        System.err.println("Groq API rate limit exceeded after " + maxRetries + " retries");
-                        return buildOfflineFallbackResponse(prompt);
+                        continue;
                     }
-                } else {
-                    // Other client errors (4xx) - don't retry
-                    System.err.println("Groq API error: " + statusCode + " - " + e.getMessage());
+                    if (hasMoreModels) {
+                        break;
+                    }
                     return buildOfflineFallbackResponse(prompt);
                 }
-            } catch (Exception e) {
-                // Unexpected errors
-                e.printStackTrace();
-                if (attempt < maxRetries) {
-                    System.out.println("Unexpected error, retrying... (attempt " + (attempt + 1) + "/" + maxRetries + ")");
-                    try {
-                        Thread.sleep(baseDelayMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        return "Request interrupted. Please try again.";
-                    }
-                    continue;
-                }
-                return buildOfflineFallbackResponse(prompt);
             }
         }
-        
+
         return "Sorry, I couldn't generate a response at this time. Please try again.";
+    }
+
+    private String sanitizeEnvValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        String cleaned = value.trim();
+        if ((cleaned.startsWith("\"") && cleaned.endsWith("\"")) ||
+                (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+            cleaned = cleaned.substring(1, cleaned.length() - 1).trim();
+        }
+        return cleaned;
+    }
+
+    private List<String> buildModelCandidates(String preferredModel) {
+        List<String> candidates = new ArrayList<>();
+        if (preferredModel != null && !preferredModel.isBlank()) {
+            candidates.add(preferredModel);
+        }
+
+        List<String> fallbackModels = Arrays.asList(
+                "llama-3.3-70b-versatile",
+                "llama-3.1-70b-versatile",
+                "llama-3.1-8b-instant",
+                "mixtral-8x7b-32768"
+        );
+
+        for (String fallbackModel : fallbackModels) {
+            if (!candidates.contains(fallbackModel)) {
+                candidates.add(fallbackModel);
+            }
+        }
+
+        return candidates;
     }
 
     private String buildOfflineFallbackResponse(String prompt) {
