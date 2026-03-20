@@ -45,12 +45,12 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state) =
     return true;
   }
 
-  // Check if roles match
-  if (actualRole !== expectedRole) {
+  // Check if roles match (case-insensitive to handle 'student' vs 'STUDENT')
+  if (actualRole.toUpperCase() !== expectedRole.toUpperCase()) {
     console.warn(`RoleGuard: Role mismatch! Expected: ${expectedRole}, Actual: ${actualRole}`);
     
     // Redirect to correct dashboard based on actual role
-    if (actualRole === 'ADMIN') {
+    if (actualRole.toUpperCase() === 'ADMIN') {
       console.log('RoleGuard: Redirecting to admin dashboard');
       router.navigate(['/admin/dashboard'], { replaceUrl: true });
     } else {
