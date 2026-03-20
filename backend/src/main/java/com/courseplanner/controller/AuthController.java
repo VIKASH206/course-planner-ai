@@ -394,8 +394,11 @@ public class AuthController {
                     user.setAuthProvider("GOOGLE");
                     logger.info("Updated existing user with Google OAuth info");
                 } else if (!googleId.equals(user.getGoogleId())) {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(ApiResponse.error("Google account does not match existing user mapping"));
+                    // If verified email matches an existing account but UID differs (for example after Firebase
+                    // project/provider migration), re-link to the current verified Google UID.
+                    logger.warn("Google UID mismatch for email {}. Re-linking account to latest verified Google UID.", user.getEmail());
+                    user.setGoogleId(googleId);
+                    user.setAuthProvider("GOOGLE");
                 }
                 
                 // OAuth users are automatically verified
