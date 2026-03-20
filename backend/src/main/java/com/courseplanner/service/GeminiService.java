@@ -134,9 +134,15 @@ public class GeminiService {
                    "Click 'Meet Admin' to get in touch with a human representative who can better assist you with your query.";
         }
 
-        User user = userRepository.findById(userId).orElse(null);
+        User user;
+        try {
+            user = userRepository.findById(userId).orElse(null);
+        } catch (Exception ex) {
+            // Invalid/missing profile context should not break AI chat.
+            return chatResponse(userMessage, context, preferredLanguage);
+        }
         if (user == null) {
-            return "Please log in with a valid user account so I can provide profile-based study guidance.";
+            return chatResponse(userMessage, context, preferredLanguage);
         }
 
         String interests = (user.getInterests() == null || user.getInterests().isEmpty())
@@ -334,12 +340,12 @@ public class GeminiService {
                     } else {
                         // Max retries exceeded
                         System.err.println("Groq API rate limit exceeded after " + maxRetries + " retries");
-                        throw new RuntimeException("AI service temporarily unavailable. Please try again in a few moments.");
+                        return buildOfflineFallbackResponse(prompt);
                     }
                 } else {
                     // Other client errors (4xx) - don't retry
                     System.err.println("Groq API error: " + statusCode + " - " + e.getMessage());
-                    throw new RuntimeException("AI service error. Please try again.");
+                    return buildOfflineFallbackResponse(prompt);
                 }
             } catch (Exception e) {
                 // Unexpected errors
@@ -354,7 +360,7 @@ public class GeminiService {
                     }
                     continue;
                 }
-                throw new RuntimeException("Failed to process your request. Please try again.");
+                return buildOfflineFallbackResponse(prompt);
             }
         }
         
