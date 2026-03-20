@@ -248,6 +248,9 @@ interface ChatMessage {
   ]
 })
 export class ProfileComponent implements OnInit {
+clearProfileChat() {
+throw new Error('Method not implemented.');
+}
 navigateTo(arg0: string) {
 throw new Error('Method not implemented.');
 }
